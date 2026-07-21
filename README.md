@@ -4,7 +4,7 @@
 
 ## Projects
 
-- 🚪 Gateway — API Gateway
+- 🚪 Edge — API Gateway
 - 🔍 Service Discovery
 - 📦 Distributed Job Queue
 - 🌉 Tunnel (ngrok alternative)
