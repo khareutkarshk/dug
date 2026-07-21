@@ -3,27 +3,42 @@ package proxy
 import (
 	"net/http"
 	"net/http/httputil"
+	"time"
 
 	"github.com/khareutkarshk/dug/edge/internal/upstream"
 )
 
-func New(pool *upstream.Pool) *httputil.ReverseProxy {
-	return &httputil.ReverseProxy{
-		// Director is a function that modifies the request before it is sent to the backend.
-		Director: func(req *http.Request) {
-			backend := pool.Next()
+type Proxy struct {
+	proxy *httputil.ReverseProxy
+}
 
-			if backend == nil {
-				return
-			}
+func New(pool *upstream.Pool, retries int) *Proxy {
 
-			// Rewrite the request so it is forwarded
-			// to the selected backend.
-			req.URL.Scheme = backend.URL.Scheme
-			req.URL.Host = backend.URL.Host
+	transport := &RetryTransport{
+		Base: &http.Transport{
+			ResponseHeaderTimeout: 10 * time.Second,
+		},
+		Pool:    pool,
+		Retries: retries,
+	}
 
-			// Update the Host header as well.
-			req.Host = backend.URL.Host
+	rp := &httputil.ReverseProxy{
+
+		// RetryTransport will choose one for every attempt.
+		Director: func(req *http.Request) {},
+
+		Transport: transport,
+
+		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, "Bad Gateway", http.StatusBadGateway)
 		},
 	}
+
+	return &Proxy{
+		proxy: rp,
+	}
+}
+
+func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	p.proxy.ServeHTTP(w, r)
 }

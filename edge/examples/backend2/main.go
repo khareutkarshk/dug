@@ -20,6 +20,7 @@ func hello(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(response)
+
 }
 
 func health(w http.ResponseWriter, r *http.Request) {

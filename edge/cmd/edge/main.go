@@ -27,7 +27,7 @@ func main() {
 
 	log.Printf("Loaded %d routes", len(cfg.Routes))
 
-	r, err := router.NewRouter(cfg.Routes)
+	r, err := router.NewRouter(cfg)
 
 	if err != nil {
 		log.Fatal(err)

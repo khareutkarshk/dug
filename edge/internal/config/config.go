@@ -11,12 +11,13 @@ type Route struct {
 	Upstreams []string `yaml:"upstreams"`
 }
 
-type Serve struct {
-	Port int `yaml:"port"`
+type Server struct {
+	Port    int `yaml:"port"`
+	Retries int `yaml:"retries"`
 }
 
 type Config struct {
-	Server Serve   `yaml:"server"`
+	Server Server  `yaml:"server"`
 	Routes []Route `yaml:"routes"`
 }
 
