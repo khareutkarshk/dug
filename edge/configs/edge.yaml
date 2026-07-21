@@ -3,4 +3,6 @@ server:
 
 routes:
   - path: /
-    target: http://localhost:3001
+    upstreams:
+      - http://localhost:3001
+      - http://localhost:3002

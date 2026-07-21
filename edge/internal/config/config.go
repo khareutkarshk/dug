@@ -7,8 +7,8 @@ import (
 )
 
 type Route struct {
-	Path   string `yaml:"path"`
-	Target string `yaml:"target"`
+	Path      string   `yaml:"path"`
+	Upstreams []string `yaml:"upstream"`
 }
 
 type Serve struct {

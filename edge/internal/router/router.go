@@ -6,6 +6,7 @@ import (
 	"github.com/khareutkarshk/dug/edge/internal/config"
 	"github.com/khareutkarshk/dug/edge/internal/middleware"
 	"github.com/khareutkarshk/dug/edge/internal/proxy"
+	"github.com/khareutkarshk/dug/edge/internal/upstream"
 )
 
 func NewRouter(routes []config.Route) (http.Handler, error) {
@@ -15,10 +16,12 @@ func NewRouter(routes []config.Route) (http.Handler, error) {
 	for _, route := range routes {
 
 		// create a new proxy for the target
-		p, err := proxy.New(route.Target)
+		pool, err := upstream.New(route.Upstreams)
 		if err != nil {
 			return nil, err
 		}
+
+		p := proxy.New(pool)
 
 		handler := middleware.RequestId(
 			middleware.Logger(p),
