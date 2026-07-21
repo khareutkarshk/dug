@@ -5,38 +5,67 @@ import (
 	"sync/atomic"
 )
 
-type Backned struct {
-	URL *url.URL
+type Backend struct {
+	URL     *url.URL
+	Healthy atomic.Bool
 }
 
 type Pool struct {
-	backends []*Backned
+	backends []*Backend
 	current  uint64
 }
 
 func New(upstreams []string) (*Pool, error) {
 
-	backends := make([]*Backned, 0, len(upstreams))
+	backends := make([]*Backend, 0, len(upstreams))
 
-	for _, rawURL := range upstreams {
+	for _, upstream := range upstreams {
 
-		u, err := url.Parse(rawURL)
+		u, err := url.Parse(upstream)
 		if err != nil {
 			return nil, err
 		}
-		backends = append(backends, &Backned{URL: u})
+
+		backend := &Backend{
+			URL: u,
+		}
+
+		backend.Healthy.Store(true)
+
+		backends = append(backends, backend)
 	}
 	return &Pool{backends: backends}, nil
 }
 
-func (p *Pool) Next() *Backned {
+// Next returns the next healthy backend using Round Robin.
+
+func (p *Pool) Next() *Backend {
 	if len(p.backends) == 0 {
 		return nil
 	}
 
-	index := atomic.AddUint64(&p.current, 1) - 1
+	start := atomic.AddUint64(&p.current, 1) - 1
 
-	backendIndex := index % uint64(len(p.backends))
+	for i := 0; i < len(p.backends); i++ {
+		index := (start + uint64(i)) % uint64(len(p.backends))
 
-	return p.backends[int(backendIndex)]
+		backend := p.backends[int(index)]
+		if backend.Healthy.Load() {
+			return backend
+		}
+	}
+
+	return nil
+}
+
+// HasHealthyBackend returns true if at least one backend
+// is currently healthy.
+func (p *Pool) HasHealthyBackend() bool {
+	for _, backend := range p.backends {
+		if backend.Healthy.Load() {
+			return true
+		}
+	}
+
+	return false
 }

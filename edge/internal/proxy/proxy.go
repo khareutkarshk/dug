@@ -9,6 +9,7 @@ import (
 
 func New(pool *upstream.Pool) *httputil.ReverseProxy {
 	return &httputil.ReverseProxy{
+		// Director is a function that modifies the request before it is sent to the backend.
 		Director: func(req *http.Request) {
 			backend := pool.Next()
 

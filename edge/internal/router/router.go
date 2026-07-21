@@ -2,6 +2,7 @@ package router
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/khareutkarshk/dug/edge/internal/config"
 	"github.com/khareutkarshk/dug/edge/internal/middleware"
@@ -20,11 +21,15 @@ func NewRouter(routes []config.Route) (http.Handler, error) {
 		if err != nil {
 			return nil, err
 		}
+		// start the health check for the upstreams in background
+		pool.StartHealthCheck(5 * time.Second)
 
 		p := proxy.New(pool)
 
-		handler := middleware.RequestId(
-			middleware.Logger(p),
+		handler := middleware.RequireHealthyBackend(pool)(
+			middleware.RequestId(
+				middleware.Logger(p),
+			),
 		)
 
 		// register the proxy with the mux
