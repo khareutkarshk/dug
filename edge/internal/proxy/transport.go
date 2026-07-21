@@ -1,25 +1,33 @@
 package proxy
 
 import (
+	"errors"
 	"net/http"
+	"time"
 
 	"github.com/khareutkarshk/dug/edge/internal/upstream"
 )
 
-// RetryTransport retries failed requests against another backend.
+var (
+	ErrNoHealthyBackend = errors.New("no healthy backend available")
+)
+
+var retryableMethods = map[string]struct{}{
+	http.MethodGet:     {},
+	http.MethodHead:    {},
+	http.MethodOptions: {},
+}
+
+// Base delay for retries.
+const initialBackoff = 100 * time.Millisecond
+
 type RetryTransport struct {
 	Base    http.RoundTripper
 	Pool    *upstream.Pool
 	Retries int
 }
 
-// Methods that are safe to retry.
-var retryableMethods = map[string]bool{
-	http.MethodGet:     true,
-	http.MethodHead:    true,
-	http.MethodOptions: true,
-}
-
+// RoundTrip is called by ReverseProxy for every outgoing request.
 func (t *RetryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	base := t.Base
@@ -27,56 +35,49 @@ func (t *RetryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		base = http.DefaultTransport
 	}
 
-	// Non-idempotent requests are forwarded only once.
-	if !retryableMethods[req.Method] {
+	maxAttempts := 1
 
-		backend := t.Pool.Next()
-		if backend == nil {
-			return nil, http.ErrServerClosed
-		}
-
-		r := req.Clone(req.Context())
-		r.URL.Scheme = backend.URL.Scheme
-		r.URL.Host = backend.URL.Host
-		r.Host = backend.URL.Host
-
-		return base.RoundTrip(r)
+	// Only retry idempotent requests.
+	if _, ok := retryableMethods[req.Method]; ok {
+		maxAttempts += t.Retries
 	}
 
 	var lastErr error
 
-	for attempt := 0; attempt <= t.Retries; attempt++ {
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 
-		backend := t.Pool.Next()
-		if backend == nil {
-			break
-		}
+		resp, err := t.send(base, req)
 
-		r := req.Clone(req.Context())
-		r.URL.Scheme = backend.URL.Scheme
-		r.URL.Host = backend.URL.Host
-		r.Host = backend.URL.Host
+		if err == nil {
 
-		resp, err := base.RoundTrip(r)
+			switch resp.StatusCode {
+			case http.StatusBadGateway,
+				http.StatusServiceUnavailable,
+				http.StatusGatewayTimeout:
 
-		// Retry on network failures.
-		if err != nil {
-			backend.Healthy.Store(false)
+				resp.Body.Close()
+
+			default:
+				return resp, nil
+			}
+
+		} else {
 			lastErr = err
-			continue
 		}
 
-		// Retry on temporary upstream failures.
-		switch resp.StatusCode {
-		case http.StatusBadGateway,
-			http.StatusServiceUnavailable,
-			http.StatusGatewayTimeout:
+		// Don't sleep after the final attempt.
+		if attempt < maxAttempts-1 {
 
-			resp.Body.Close()
-			continue
+			// Exponential backoff:
+			// 100ms → 200ms → 400ms → 800ms ...
+			backoff := initialBackoff * time.Duration(1<<attempt)
+
+			select {
+			case <-req.Context().Done():
+				return nil, req.Context().Err()
+			case <-time.After(backoff):
+			}
 		}
-
-		return resp, nil
 	}
 
 	if lastErr != nil {
@@ -88,4 +89,42 @@ func (t *RetryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		Header:     make(http.Header),
 		Body:       http.NoBody,
 	}, nil
+}
+
+// send forwards a request to one backend.
+func (t *RetryTransport) send(
+	base http.RoundTripper,
+	req *http.Request,
+) (*http.Response, error) {
+
+	backend := t.Pool.Next()
+	if backend == nil {
+		return nil, ErrNoHealthyBackend
+	}
+
+	r := req.Clone(req.Context())
+
+	r.URL.Scheme = backend.URL.Scheme
+	r.URL.Host = backend.URL.Host
+	r.Host = backend.URL.Host
+
+	resp, err := base.RoundTrip(r)
+
+	if err != nil {
+		backend.ReportFailure()
+		return nil, err
+	}
+
+	// Treat temporary server errors as failures.
+	switch resp.StatusCode {
+	case http.StatusBadGateway,
+		http.StatusServiceUnavailable,
+		http.StatusGatewayTimeout:
+		backend.ReportFailure()
+
+	default:
+		backend.ReportSuccess()
+	}
+
+	return resp, nil
 }

@@ -3,11 +3,23 @@ package upstream
 import (
 	"net/url"
 	"sync/atomic"
+	"time"
 )
 
+// Number of consecutive failures before
+// a backend is marked unhealthy.
+const failureThreshold = 3
+
 type Backend struct {
-	URL     *url.URL
+	URL *url.URL
+
 	Healthy atomic.Bool
+
+	// Consecutive failed requests.
+	Failures atomic.Uint32
+
+	// Time of the most recent failure.
+	LastFailure atomic.Int64
 }
 
 type Pool struct {
@@ -34,12 +46,14 @@ func New(upstreams []string) (*Pool, error) {
 
 		backends = append(backends, backend)
 	}
-	return &Pool{backends: backends}, nil
+
+	return &Pool{
+		backends: backends,
+	}, nil
 }
 
-// Next returns the next healthy backend using Round Robin.
-
 func (p *Pool) Next() *Backend {
+
 	if len(p.backends) == 0 {
 		return nil
 	}
@@ -47,9 +61,11 @@ func (p *Pool) Next() *Backend {
 	start := atomic.AddUint64(&p.current, 1) - 1
 
 	for i := 0; i < len(p.backends); i++ {
+
 		index := (start + uint64(i)) % uint64(len(p.backends))
 
-		backend := p.backends[int(index)]
+		backend := p.backends[index]
+
 		if backend.Healthy.Load() {
 			return backend
 		}
@@ -58,10 +74,32 @@ func (p *Pool) Next() *Backend {
 	return nil
 }
 
-// HasHealthyBackend returns true if at least one backend
-// is currently healthy.
+// ReportSuccess is called after a successful request.
+func (b *Backend) ReportSuccess() {
+
+	b.Failures.Store(0)
+
+	if !b.Healthy.Load() {
+		b.Healthy.Store(true)
+	}
+}
+
+// ReportFailure is called after a failed request.
+func (b *Backend) ReportFailure() {
+
+	failures := b.Failures.Add(1)
+
+	b.LastFailure.Store(time.Now().Unix())
+
+	if failures >= failureThreshold {
+		b.Healthy.Store(false)
+	}
+}
+
 func (p *Pool) HasHealthyBackend() bool {
+
 	for _, backend := range p.backends {
+
 		if backend.Healthy.Load() {
 			return true
 		}
