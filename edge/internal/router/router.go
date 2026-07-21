@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/khareutkarshk/dug/edge/internal/config"
+	"github.com/khareutkarshk/dug/edge/internal/middleware"
 	"github.com/khareutkarshk/dug/edge/internal/proxy"
 )
 
@@ -19,8 +20,12 @@ func NewRouter(routes []config.Route) (http.Handler, error) {
 			return nil, err
 		}
 
+		handler := middleware.RequestId(
+			middleware.Logger(p),
+		)
+
 		// register the proxy with the mux
-		mux.Handle(route.Path, p)
+		mux.Handle(route.Path, handler)
 	}
 
 	return mux, nil
