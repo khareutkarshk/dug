@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/khareutkarshk/dug/internal/config"
+	"github.com/khareutkarshk/dug/internal/logger"
 	"github.com/khareutkarshk/dug/internal/metrics"
 	"github.com/khareutkarshk/dug/internal/router"
 	"github.com/khareutkarshk/dug/internal/server"
@@ -28,7 +29,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Printf("Loaded %d routes", len(cfg.Routes))
+	logger.Log.Info(
+		"config loaded", "routes", len(cfg.Routes),
+	)
 
 	r, err := router.NewRouter(cfg)
 
@@ -59,7 +62,7 @@ func main() {
 
 	signal.Stop(quit)
 
-	log.Println("Received shutdown signal, shutting down gracefully...")
+	logger.Log.Info("Shutting signal received, shutting down server...")
 
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
@@ -73,6 +76,6 @@ func main() {
 		return
 	}
 
-	log.Println("Server stopped gracefully")
+	logger.Log.Info("Server gracefully stopped")
 
 }
