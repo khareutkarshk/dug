@@ -30,9 +30,9 @@ type Backend struct {
 	// Time of the most recent failure.
 	LastFailure atomic.Int64
 
-	CircuitState   atomic.Uint32
-	OpenUntil      atomic.Int64
-	HalfOpenFlight atomic.Bool
+	CircuitState     atomic.Uint32
+	OpenUntil        atomic.Int64
+	HalfOpenInFlight atomic.Bool
 }
 
 type Pool struct {
@@ -87,16 +87,21 @@ func (p *Pool) Next() *Backend {
 
 		if backend.CircuitState.Load() == CircuitOpen {
 
-			if time.Now().Unix() >= backend.OpenUntil.Load() {
-				backend.CircuitState.Store(CircuitHalfOpen)
-			} else {
+			if time.Now().Unix() < backend.OpenUntil.Load() {
 				continue
+			}
+
+			if backend.CircuitState.CompareAndSwap(
+				CircuitOpen,
+				CircuitHalfOpen,
+			) {
+				backend.EnterHalfOpen()
 			}
 		}
 
 		if backend.CircuitState.Load() == CircuitHalfOpen {
 
-			if !backend.HalfOpenFlight.CompareAndSwap(false, true) {
+			if !backend.HalfOpenInFlight.CompareAndSwap(false, true) {
 				continue
 			}
 		}
@@ -111,9 +116,8 @@ func (p *Pool) Next() *Backend {
 func (b *Backend) ReportSuccess() {
 
 	if b.CircuitState.Load() == CircuitHalfOpen {
-		b.CircuitState.Store(CircuitClosed)
-		b.HalfOpenFlight.Store(false)
-		b.Healthy.Store(true)
+		b.CloseCircuit()
+		return
 	}
 	b.Failures.Store(0)
 }
@@ -122,32 +126,52 @@ func (b *Backend) ReportSuccess() {
 func (b *Backend) ReportFailure() {
 
 	if b.CircuitState.Load() == CircuitHalfOpen {
-		b.HalfOpenFlight.Store(false)
-		b.CircuitState.Store(CircuitOpen)
-		b.OpenUntil.Store(time.Now().Add(circuitOpenFor).Unix())
-		b.Healthy.Store(false)
+		b.OpenCircuit()
 		b.Failures.Store(0)
 		return
 	}
 
 	failures := b.Failures.Add(1)
 
-	b.LastFailure.Store(time.Now().Unix())
-
 	if failures >= failureThreshold {
-		b.Healthy.Store(false)
-		b.CircuitState.Store(CircuitOpen)
-		b.OpenUntil.Store(time.Now().Add(circuitOpenFor).Unix())
+		b.OpenCircuit()
+	} else {
+		b.LastFailure.Store(time.Now().Unix())
 	}
+}
+
+func (b *Backend) OpenCircuit() {
+	b.Healthy.Store(false)
+	b.CircuitState.Store(CircuitOpen)
+	b.OpenUntil.Store(time.Now().Add(circuitOpenFor).Unix())
+	b.HalfOpenInFlight.Store(false)
+}
+
+func (b *Backend) CloseCircuit() {
+	b.CircuitState.Store(CircuitClosed)
+	b.HalfOpenInFlight.Store(false)
+	b.Healthy.Store(true)
+	b.Failures.Store(0)
+}
+
+func (b *Backend) EnterHalfOpen() {
+	b.CircuitState.Store(CircuitHalfOpen)
+	b.HalfOpenInFlight.Store(false)
 }
 
 func (p *Pool) HasHealthyBackend() bool {
 
 	for _, backend := range p.backends {
 
-		if backend.Healthy.Load() {
-			return true
+		if !backend.Healthy.Load() {
+			continue
 		}
+
+		if backend.CircuitState.Load() == CircuitOpen {
+			continue
+		}
+
+		return true
 	}
 
 	return false

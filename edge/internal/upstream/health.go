@@ -35,9 +35,8 @@ func (p *Pool) checkBackend(backend *Backend) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
-		backend.ReportSuccess()
 		backend.Healthy.Store(true)
 	} else {
-		backend.ReportFailure()
+		backend.Healthy.Store(false)
 	}
 }
