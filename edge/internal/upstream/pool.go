@@ -109,11 +109,26 @@ func (p *Pool) Next() *Backend {
 
 // ReportSuccess is called after a successful request.
 func (b *Backend) ReportSuccess() {
+
+	if b.CircuitState.Load() == CircuitHalfOpen {
+		b.CircuitState.Store(CircuitClosed)
+		b.HalfOpenFlight.Store(false)
+		b.Healthy.Store(true)
+	}
 	b.Failures.Store(0)
 }
 
 // ReportFailure is called after a failed request.
 func (b *Backend) ReportFailure() {
+
+	if b.CircuitState.Load() == CircuitHalfOpen {
+		b.HalfOpenFlight.Store(false)
+		b.CircuitState.Store(CircuitOpen)
+		b.OpenUntil.Store(time.Now().Add(circuitOpenFor).Unix())
+		b.Healthy.Store(false)
+		b.Failures.Store(0)
+		return
+	}
 
 	failures := b.Failures.Add(1)
 
@@ -121,7 +136,6 @@ func (b *Backend) ReportFailure() {
 
 	if failures >= failureThreshold {
 		b.Healthy.Store(false)
-
 		b.CircuitState.Store(CircuitOpen)
 		b.OpenUntil.Store(time.Now().Add(circuitOpenFor).Unix())
 	}
