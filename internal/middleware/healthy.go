@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/khareutkarshk/dug/edge/internal/upstream"
+	"github.com/khareutkarshk/dug/internal/upstream"
 )
 
 // HealthyBackend ensures that at least one backend is available.

@@ -11,15 +11,18 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/khareutkarshk/dug/edge/internal/config"
-	"github.com/khareutkarshk/dug/edge/internal/router"
-	"github.com/khareutkarshk/dug/edge/internal/server"
+	"github.com/khareutkarshk/dug/internal/config"
+	"github.com/khareutkarshk/dug/internal/metrics"
+	"github.com/khareutkarshk/dug/internal/router"
+	"github.com/khareutkarshk/dug/internal/server"
 )
 
 func main() {
 
 	// Load configuration
 	cfg, err := config.Load("configs/edge.yaml")
+
+	metrics.Register()
 
 	if err != nil {
 		log.Fatal(err)

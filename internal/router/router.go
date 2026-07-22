@@ -4,15 +4,18 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/khareutkarshk/dug/edge/internal/config"
-	"github.com/khareutkarshk/dug/edge/internal/middleware"
-	"github.com/khareutkarshk/dug/edge/internal/proxy"
-	"github.com/khareutkarshk/dug/edge/internal/upstream"
+	"github.com/khareutkarshk/dug/internal/config"
+	"github.com/khareutkarshk/dug/internal/middleware"
+	"github.com/khareutkarshk/dug/internal/proxy"
+	"github.com/khareutkarshk/dug/internal/upstream"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func NewRouter(cfg *config.Config) (http.Handler, error) {
 
 	mux := http.NewServeMux()
+
+	mux.Handle("/metrics", promhttp.Handler())
 
 	// loop through the routes and create a proxy for each route
 	for _, route := range cfg.Routes {
@@ -29,7 +32,9 @@ func NewRouter(cfg *config.Config) (http.Handler, error) {
 
 		handler := middleware.RequireHealthyBackend(pool)(
 			middleware.RequestId(
-				middleware.Logger(p),
+				middleware.Logger(
+					middleware.Metrics(p),
+				),
 			),
 		)
 

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/khareutkarshk/dug/edge/internal/upstream"
+	"github.com/khareutkarshk/dug/internal/upstream"
 )
 
 var (

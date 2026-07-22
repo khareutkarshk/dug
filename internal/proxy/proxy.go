@@ -5,7 +5,7 @@ import (
 	"net/http/httputil"
 	"time"
 
-	"github.com/khareutkarshk/dug/edge/internal/upstream"
+	"github.com/khareutkarshk/dug/internal/upstream"
 )
 
 type Proxy struct {
