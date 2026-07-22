@@ -7,6 +7,7 @@ import (
 	"github.com/khareutkarshk/dug/internal/config"
 	"github.com/khareutkarshk/dug/internal/middleware"
 	"github.com/khareutkarshk/dug/internal/proxy"
+	"github.com/khareutkarshk/dug/internal/ratelimit"
 	"github.com/khareutkarshk/dug/internal/upstream"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -30,10 +31,17 @@ func NewRouter(cfg *config.Config) (http.Handler, error) {
 
 		p := proxy.New(pool, cfg.Server.Retries)
 
+		manager := ratelimit.NewManager(
+			cfg.Server.RateLimit.RPS,
+			cfg.Server.RateLimit.Burst,
+		)
+
 		handler := middleware.RequireHealthyBackend(pool)(
-			middleware.RequestId(
-				middleware.Logger(
-					middleware.Metrics(p),
+			middleware.RateLimit(manager)(
+				middleware.RequestId(
+					middleware.Logger(
+						middleware.Metrics(p),
+					),
 				),
 			),
 		)

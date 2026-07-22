@@ -4,6 +4,8 @@ import (
 	"net/url"
 	"sync/atomic"
 	"time"
+
+	"github.com/khareutkarshk/dug/internal/config"
 )
 
 // Number of consecutive failures before
@@ -20,8 +22,8 @@ const (
 )
 
 type Backend struct {
-	URL *url.URL
-
+	URL     *url.URL
+	Weight  int
 	Healthy atomic.Bool
 
 	// Consecutive failed requests.
@@ -37,22 +39,25 @@ type Backend struct {
 
 type Pool struct {
 	backends []*Backend
+	// weighted round robin schedule
+	schedule []*Backend
 	current  uint64
 }
 
-func New(upstreams []string) (*Pool, error) {
+func New(upstreams []config.Upstream) (*Pool, error) {
 
 	backends := make([]*Backend, 0, len(upstreams))
 
 	for _, upstream := range upstreams {
 
-		u, err := url.Parse(upstream)
+		u, err := url.Parse(upstream.URL)
 		if err != nil {
 			return nil, err
 		}
 
 		backend := &Backend{
-			URL: u,
+			URL:    u,
+			Weight: max(upstream.Weight, 1), // Ensure weight is at least 1
 		}
 
 		backend.CircuitState.Store(CircuitClosed)
@@ -62,24 +67,42 @@ func New(upstreams []string) (*Pool, error) {
 		backends = append(backends, backend)
 	}
 
+	// build the weighted round robin schedule
+
+	schedule := make([]*Backend, 0)
+
+	for _, backend := range backends {
+
+		weight := backend.Weight
+
+		// Default to 1 if weight is not set or less than 1
+		if weight < 1 {
+			weight = 1
+		}
+
+		for i := 0; i < weight; i++ {
+			schedule = append(schedule, backend)
+		}
+	}
+
 	return &Pool{
 		backends: backends,
-	}, nil
+		schedule: schedule}, nil
 }
 
 func (p *Pool) Next() *Backend {
 
-	if len(p.backends) == 0 {
+	if len(p.schedule) == 0 {
 		return nil
 	}
 
 	start := atomic.AddUint64(&p.current, 1) - 1
 
-	for i := 0; i < len(p.backends); i++ {
+	for i := 0; i < len(p.schedule); i++ {
 
-		index := (start + uint64(i)) % uint64(len(p.backends))
+		index := (start + uint64(i)) % uint64(len(p.schedule))
 
-		backend := p.backends[index]
+		backend := p.schedule[index]
 
 		if !backend.Healthy.Load() {
 			continue
@@ -175,4 +198,12 @@ func (p *Pool) HasHealthyBackend() bool {
 	}
 
 	return false
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+
+	return b
 }

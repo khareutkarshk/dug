@@ -6,19 +6,29 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type Route struct {
-	Path      string   `yaml:"path"`
-	Upstreams []string `yaml:"upstreams"`
+type Upstream struct {
+	URL    string `yaml:"url"`
+	Weight int    `yaml:"weight"`
 }
 
-type Server struct {
+type Route struct {
+	Path      string     `yaml:"path"`
+	Upstreams []Upstream `yaml:"upstreams"`
+}
+
+type ServerConfig struct {
 	Port    int `yaml:"port"`
 	Retries int `yaml:"retries"`
+
+	RateLimit struct {
+		RPS   float64 `yaml:"rps"`
+		Burst int     `yaml:"burst"`
+	} `yaml:"rate_limit"`
 }
 
 type Config struct {
-	Server Server  `yaml:"server"`
-	Routes []Route `yaml:"routes"`
+	Server ServerConfig `yaml:"server"`
+	Routes []Route      `yaml:"routes"`
 }
 
 func Load(path string) (*Config, error) {
