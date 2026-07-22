@@ -1,14 +1,22 @@
-# Dug 🐶
+# Dug Edge
 
-> A collection of production-grade infrastructure projects built in Go.
+> A lightweight, extensible API Gateway written in Go.
 
-## Projects
+## Features
 
-- 🚪 Edge — API Gateway
-- 🔍 Service Discovery
-- 📦 Distributed Job Queue
-- 🌉 Tunnel (ngrok alternative)
-- 📁 Object Storage
-- 📡 Log Streaming
-- ⚖️ Load Balancer
-- ⏰ Distributed Scheduler
+- Reverse Proxy
+- Route Configuration
+- Middleware Pipeline
+- Graceful Shutdown
+- Structured Logging
+- Plugin Architecture (Upcoming)
+
+## Roadmap
+
+- [ ] Reverse Proxy
+- [ ] YAML Configuration
+- [ ] Middleware
+- [ ] JWT Authentication
+- [ ] Rate Limiting
+- [ ] Load Balancing
+- [ ] Metrics

@@ -1,9 +1,0 @@
-server:
-  port: 8080
-  retries: 2
-
-routes:
-  - path: /
-    upstreams:
-      - http://localhost:3001
-      - http://localhost:3002
