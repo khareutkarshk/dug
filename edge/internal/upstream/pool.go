@@ -8,7 +8,16 @@ import (
 
 // Number of consecutive failures before
 // a backend is marked unhealthy.
-const failureThreshold = 3
+const (
+	failureThreshold = 3
+	circuitOpenFor   = 30 * time.Second
+)
+
+const (
+	CircuitClosed uint32 = iota
+	CircuitOpen
+	CircuitHalfOpen
+)
 
 type Backend struct {
 	URL *url.URL
@@ -20,6 +29,10 @@ type Backend struct {
 
 	// Time of the most recent failure.
 	LastFailure atomic.Int64
+
+	CircuitState   atomic.Uint32
+	OpenUntil      atomic.Int64
+	HalfOpenFlight atomic.Bool
 }
 
 type Pool struct {
@@ -41,6 +54,8 @@ func New(upstreams []string) (*Pool, error) {
 		backend := &Backend{
 			URL: u,
 		}
+
+		backend.CircuitState.Store(CircuitClosed)
 
 		backend.Healthy.Store(true)
 
@@ -66,9 +81,27 @@ func (p *Pool) Next() *Backend {
 
 		backend := p.backends[index]
 
-		if backend.Healthy.Load() {
-			return backend
+		if !backend.Healthy.Load() {
+			continue
 		}
+
+		if backend.CircuitState.Load() == CircuitOpen {
+
+			if time.Now().Unix() >= backend.OpenUntil.Load() {
+				backend.CircuitState.Store(CircuitHalfOpen)
+			} else {
+				continue
+			}
+		}
+
+		if backend.CircuitState.Load() == CircuitHalfOpen {
+
+			if !backend.HalfOpenFlight.CompareAndSwap(false, true) {
+				continue
+			}
+		}
+
+		return backend
 	}
 
 	return nil
@@ -76,12 +109,7 @@ func (p *Pool) Next() *Backend {
 
 // ReportSuccess is called after a successful request.
 func (b *Backend) ReportSuccess() {
-
 	b.Failures.Store(0)
-
-	if !b.Healthy.Load() {
-		b.Healthy.Store(true)
-	}
 }
 
 // ReportFailure is called after a failed request.
@@ -93,6 +121,9 @@ func (b *Backend) ReportFailure() {
 
 	if failures >= failureThreshold {
 		b.Healthy.Store(false)
+
+		b.CircuitState.Store(CircuitOpen)
+		b.OpenUntil.Store(time.Now().Add(circuitOpenFor).Unix())
 	}
 }
 
