@@ -28,15 +28,15 @@ func (p *Pool) checkBackend(backend *Backend) {
 
 	resp, err := client.Get(backend.URL.String() + "/health")
 	if err != nil {
-		backend.Healthy.Store(false)
+		backend.ReportFailure()
 		return
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
-		backend.Healthy.Store(true)
+		backend.ReportSuccess()
 	} else {
-		backend.Healthy.Store(false)
+		backend.ReportFailure()
 	}
 }
