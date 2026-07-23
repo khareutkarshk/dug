@@ -108,6 +108,10 @@ func (t *RetryTransport) send(
 	r.URL.Host = backend.URL.Host
 	r.Host = backend.URL.Host
 
+	// Track one in-flight request for this backend.
+	backend.ActiveConnections.Add(1)
+	defer backend.ActiveConnections.Add(-1)
+
 	resp, err := base.RoundTrip(r)
 
 	if err != nil {

@@ -1,5 +1,7 @@
 package upstream
 
+// Pool implements the Smooth Weighted Round Robin algorithm.
+
 import (
 	"net/url"
 	"sync"
@@ -36,7 +38,14 @@ type Backend struct {
 	CircuitState     atomic.Uint32
 	OpenUntil        atomic.Int64
 	HalfOpenInFlight atomic.Bool
-	CurrentWeight    int
+
+	// used only by the load balancing algorithm
+	// access must be protected by Pool.mu
+	CurrentWeight int
+
+	// Number of active in-flight requests to this backend.
+	// used by the Least Connections load balancing algorithm
+	ActiveConnections atomic.Int64
 }
 
 type Pool struct {

@@ -8,9 +8,11 @@ server:
 
 routes:
   - path: /
-    upstreams:
-      - http://localhost:3001
-        weight: 5
+    strategy: smooth_weighted
 
-      - http://localhost:3002
-        weight: 3
+    upstreams:
+  - url: http://localhost:3001
+    weight: 5
+
+  - url: http://localhost:3002
+    weight: 3

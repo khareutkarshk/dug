@@ -14,6 +14,7 @@ type Upstream struct {
 type Route struct {
 	Path      string     `yaml:"path"`
 	Upstreams []Upstream `yaml:"upstreams"`
+	Strategy  string     `yaml:"strategy"`
 }
 
 type ServerConfig struct {
