@@ -5,7 +5,9 @@
 
 package upstream
 
-import "time"
+import (
+	"time"
+)
 
 type SmoothWeightedBalancer struct{}
 

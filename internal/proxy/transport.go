@@ -101,7 +101,6 @@ func (t *RetryTransport) send(
 	if backend == nil {
 		return nil, ErrNoHealthyBackend
 	}
-
 	r := req.Clone(req.Context())
 
 	r.URL.Scheme = backend.URL.Scheme

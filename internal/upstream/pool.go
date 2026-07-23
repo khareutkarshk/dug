@@ -151,6 +151,10 @@ func (b *Backend) EnterHalfOpen() {
 }
 
 func (p *Pool) HasHealthyBackend() bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	now := time.Now().Unix()
 
 	for _, backend := range p.backends {
 
@@ -158,7 +162,8 @@ func (p *Pool) HasHealthyBackend() bool {
 			continue
 		}
 
-		if backend.CircuitState.Load() == CircuitOpen {
+		if backend.CircuitState.Load() == CircuitOpen &&
+			now < backend.OpenUntil.Load() {
 			continue
 		}
 
@@ -166,12 +171,4 @@ func (p *Pool) HasHealthyBackend() bool {
 	}
 
 	return false
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-
-	return b
 }

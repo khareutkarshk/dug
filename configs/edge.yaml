@@ -1,6 +1,6 @@
 server:
   port: 8080
-  retries: 2
+  retries: 0
 
   rate_limit:
     rps: 10
@@ -8,11 +8,11 @@ server:
 
 routes:
   - path: /
-    strategy: smooth_weighted
+    strategy: least_connections
 
     upstreams:
-  - url: http://localhost:3001
-    weight: 5
+      - url: http://localhost:3001
+        weight: 5
 
-  - url: http://localhost:3002
-    weight: 3
+      - url: http://localhost:3002
+        weight: 3
