@@ -2,6 +2,7 @@ package upstream
 
 import (
 	"net/url"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -35,16 +36,20 @@ type Backend struct {
 	CircuitState     atomic.Uint32
 	OpenUntil        atomic.Int64
 	HalfOpenInFlight atomic.Bool
+	CurrentWeight    int
 }
 
 type Pool struct {
-	backends []*Backend
-	// weighted round robin schedule
-	schedule []*Backend
-	current  uint64
+	backends    []*Backend
+	totalWeight int
+
+	// protects the scheduling algorithm and the backends slice
+	mu sync.Mutex
 }
 
 func New(upstreams []config.Upstream) (*Pool, error) {
+
+	pool := &Pool{}
 
 	backends := make([]*Backend, 0, len(upstreams))
 
@@ -65,51 +70,34 @@ func New(upstreams []config.Upstream) (*Pool, error) {
 		backend.Healthy.Store(true)
 
 		backends = append(backends, backend)
+
+		pool.totalWeight += backend.Weight
 	}
 
 	// build the weighted round robin schedule
 
-	schedule := make([]*Backend, 0)
+	pool.backends = backends
 
-	for _, backend := range backends {
-
-		weight := backend.Weight
-
-		// Default to 1 if weight is not set or less than 1
-		if weight < 1 {
-			weight = 1
-		}
-
-		for i := 0; i < weight; i++ {
-			schedule = append(schedule, backend)
-		}
-	}
-
-	return &Pool{
-		backends: backends,
-		schedule: schedule}, nil
+	return pool, nil
 }
 
 func (p *Pool) Next() *Backend {
 
-	if len(p.schedule) == 0 {
-		return nil
-	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
-	start := atomic.AddUint64(&p.current, 1) - 1
+	var selected *Backend
 
-	for i := 0; i < len(p.schedule); i++ {
+	for _, backend := range p.backends {
 
-		index := (start + uint64(i)) % uint64(len(p.schedule))
-
-		backend := p.schedule[index]
-
+		// skip unhealthy backends
 		if !backend.Healthy.Load() {
 			continue
 		}
 
-		if backend.CircuitState.Load() == CircuitOpen {
+		// Handle open circuts
 
+		if backend.CircuitState.Load() == CircuitOpen {
 			if time.Now().Unix() < backend.OpenUntil.Load() {
 				continue
 			}
@@ -122,6 +110,8 @@ func (p *Pool) Next() *Backend {
 			}
 		}
 
+		// allow only one request to a half-open backend
+
 		if backend.CircuitState.Load() == CircuitHalfOpen {
 
 			if !backend.HalfOpenInFlight.CompareAndSwap(false, true) {
@@ -129,10 +119,24 @@ func (p *Pool) Next() *Backend {
 			}
 		}
 
-		return backend
+		// smooth weighted round robin algorithm
+		// Increase the current weight by configured weight
+		backend.CurrentWeight += backend.Weight
+
+		// Select the backend with the highest current weight
+		if selected == nil || backend.CurrentWeight > selected.CurrentWeight {
+			selected = backend
+		}
 	}
 
-	return nil
+	if selected == nil {
+		return nil
+	}
+
+	// reduce the current weight of the selected backend by the total weight
+	selected.CurrentWeight -= p.totalWeight
+
+	return selected
 }
 
 // ReportSuccess is called after a successful request.
