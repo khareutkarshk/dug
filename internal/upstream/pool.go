@@ -52,6 +52,8 @@ type Pool struct {
 	backends    []*Backend
 	totalWeight int
 
+	balancer Balancer
+
 	// protects the scheduling algorithm and the backends slice
 	mu sync.Mutex
 }
@@ -59,6 +61,8 @@ type Pool struct {
 func New(upstreams []config.Upstream) (*Pool, error) {
 
 	pool := &Pool{}
+
+	pool.balancer = SmoothWeightedBalancer{}
 
 	backends := make([]*Backend, 0, len(upstreams))
 
@@ -91,61 +95,12 @@ func New(upstreams []config.Upstream) (*Pool, error) {
 }
 
 func (p *Pool) Next() *Backend {
+	return p.balancer.Next(p)
+}
 
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	var selected *Backend
-
-	for _, backend := range p.backends {
-
-		// skip unhealthy backends
-		if !backend.Healthy.Load() {
-			continue
-		}
-
-		// Handle open circuts
-
-		if backend.CircuitState.Load() == CircuitOpen {
-			if time.Now().Unix() < backend.OpenUntil.Load() {
-				continue
-			}
-
-			if backend.CircuitState.CompareAndSwap(
-				CircuitOpen,
-				CircuitHalfOpen,
-			) {
-				backend.EnterHalfOpen()
-			}
-		}
-
-		// allow only one request to a half-open backend
-
-		if backend.CircuitState.Load() == CircuitHalfOpen {
-
-			if !backend.HalfOpenInFlight.CompareAndSwap(false, true) {
-				continue
-			}
-		}
-
-		// smooth weighted round robin algorithm
-		// Increase the current weight by configured weight
-		backend.CurrentWeight += backend.Weight
-
-		// Select the backend with the highest current weight
-		if selected == nil || backend.CurrentWeight > selected.CurrentWeight {
-			selected = backend
-		}
-	}
-
-	if selected == nil {
-		return nil
-	}
-
-	// reduce the current weight of the selected backend by the total weight
-	selected.CurrentWeight -= p.totalWeight
-
-	return selected
+// SetBalancer changes the load-balancing algorithm used by this pool.
+func (p *Pool) SetBalancer(b Balancer) {
+	p.balancer = b
 }
 
 // ReportSuccess is called after a successful request.

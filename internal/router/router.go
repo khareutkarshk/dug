@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -26,6 +27,18 @@ func NewRouter(cfg *config.Config) (http.Handler, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		switch route.Strategy {
+		case "", upstream.StrategySmoothWeighted:
+			pool.SetBalancer(upstream.SmoothWeightedBalancer{})
+
+		case upstream.StrategyLeastConnections:
+			pool.SetBalancer(upstream.LeastConnectionsBalancer{})
+
+		default:
+			return nil, fmt.Errorf("unknown load balancing strategy: %s", route.Strategy)
+		}
+
 		// start the health check for the upstreams in background
 		pool.StartHealthCheck(5 * time.Second)
 
