@@ -19,12 +19,31 @@ func CORS(cfg config.CORSConfig) func(http.Handler) http.Handler {
 				return
 			}
 
-			if len(cfg.AllowOrigins) > 0 {
+			origin := r.Header.Get("Origin")
+
+			switch {
+			case len(cfg.AllowOrigins) == 0:
+				// Do nothing
+
+			case len(cfg.AllowOrigins) == 1 && cfg.AllowOrigins[0] == "*":
 				w.Header().Set(
 					"Access-Control-Allow-Origin",
-					strings.Join(cfg.AllowOrigins, ","),
+					"*",
 				)
+
+			default:
+				for _, allowed := range cfg.AllowOrigins {
+					if origin == allowed {
+						w.Header().Set(
+							"Access-Control-Allow-Origin",
+							origin,
+						)
+						break
+					}
+				}
 			}
+
+			w.Header().Add("Vary", "Origin")
 
 			if len(cfg.AllowMethods) > 0 {
 				w.Header().Set(
@@ -62,7 +81,9 @@ func CORS(cfg config.CORSConfig) func(http.Handler) http.Handler {
 			}
 
 			// Handle browser preflight
-			if r.Method == http.MethodOptions {
+			if r.Method == http.MethodOptions &&
+				r.Header.Get("Access-Control-Request-Method") != "" {
+
 				w.WriteHeader(http.StatusNoContent)
 				return
 			}
