@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/khareutkarshk/dug/internal/config"
+	"github.com/khareutkarshk/dug/internal/discovery"
 )
 
 // Number of consecutive failures before
@@ -58,32 +58,30 @@ type Pool struct {
 	mu sync.Mutex
 }
 
-func New(upstreams []config.Upstream) (*Pool, error) {
+func New(provider discovery.Provider) (*Pool, error) {
 
 	pool := &Pool{}
 
 	pool.balancer = SmoothWeightedBalancer{}
 
-	backends := make([]*Backend, 0, len(upstreams))
+	endpoints, err := provider.GetEndpoints()
+	if err != nil {
+		return nil, err
+	}
 
-	for _, upstream := range upstreams {
+	backends := make([]*Backend, 0, len(endpoints))
 
-		u, err := url.Parse(upstream.URL)
-		if err != nil {
-			return nil, err
-		}
+	for _, ep := range endpoints {
 
 		backend := &Backend{
-			URL:    u,
-			Weight: max(upstream.Weight, 1), // Ensure weight is at least 1
+			URL:    ep.URL,
+			Weight: max(ep.Weight, 1),
 		}
 
 		backend.CircuitState.Store(CircuitClosed)
-
 		backend.Healthy.Store(true)
 
 		backends = append(backends, backend)
-
 		pool.totalWeight += backend.Weight
 	}
 

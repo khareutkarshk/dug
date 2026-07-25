@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/khareutkarshk/dug/internal/config"
+	"github.com/khareutkarshk/dug/internal/discovery"
 	"github.com/khareutkarshk/dug/internal/middleware"
 	"github.com/khareutkarshk/dug/internal/proxy"
 	"github.com/khareutkarshk/dug/internal/ratelimit"
@@ -23,7 +24,9 @@ func NewRouter(cfg *config.Config) (http.Handler, error) {
 	for _, route := range cfg.Routes {
 
 		// create a new proxy for the target
-		pool, err := upstream.New(route.Upstreams)
+		provider := discovery.Static{Upstreams: route.Upstreams}
+
+		pool, err := upstream.New(provider)
 		if err != nil {
 			return nil, err
 		}
