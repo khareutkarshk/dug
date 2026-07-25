@@ -39,9 +39,34 @@ func main() {
 		log.Fatal(err)
 	}
 
+	manager := router.NewManager(r)
+
+	err = config.Watch("configs/edge.yaml", func() {
+
+		cfg, err := config.Load("configs/edge.yaml")
+		if err != nil {
+			logger.Log.Error("reload failed", "error", err)
+			return
+		}
+
+		newRouter, err := router.NewRouter(cfg)
+		if err != nil {
+			logger.Log.Error("router build failed", "error", err)
+			return
+		}
+
+		manager.Update(newRouter)
+
+		logger.Log.Info("configuration reloaded")
+	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	addr := fmt.Sprintf(":%d", cfg.Server.Port)
 
-	srv := server.New(addr, r)
+	srv := server.New(addr, manager)
 
 	go func() {
 		if err := srv.Start(); err != nil &&

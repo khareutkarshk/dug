@@ -3,7 +3,7 @@ server:
   retries: 0
 
   rate_limit:
-    rps: 10
+    rps: 20
     burst: 20
 
 routes:
