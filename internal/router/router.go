@@ -56,10 +56,12 @@ func NewRouter(cfg *config.Config) (http.Handler, error) {
 		)
 
 		handler := middleware.RequireHealthyBackend(pool)(
-			middleware.RateLimit(manager)(
-				middleware.RequestId(
-					middleware.Logger(
-						middleware.Metrics(p),
+			middleware.CORS(route.CORS)(
+				middleware.RateLimit(manager)(
+					middleware.RequestId(
+						middleware.Logger(
+							middleware.Metrics(p),
+						),
 					),
 				),
 			),
