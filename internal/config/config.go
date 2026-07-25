@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -11,10 +12,19 @@ type Upstream struct {
 	Weight int    `yaml:"weight"`
 }
 
+type HeaderRules struct {
+	Add    map[string]string `yaml:"add"`
+	Remove []string          `yaml:"remove"`
+}
+
 type Route struct {
-	Path      string     `yaml:"path"`
-	Upstreams []Upstream `yaml:"upstreams"`
-	Strategy  string     `yaml:"strategy"`
+	Path      string        `yaml:"path"`
+	Upstreams []Upstream    `yaml:"upstreams"`
+	Strategy  string        `yaml:"strategy"`
+	Timeout   time.Duration `yaml:"timeout"`
+
+	RequestHeaders  HeaderRules `yaml:"request_headers"`
+	ResponseHeaders HeaderRules `yaml:"response_headers"`
 }
 
 type ServerConfig struct {

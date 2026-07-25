@@ -8,7 +8,23 @@ server:
 
 routes:
   - path: /
+    timeout: 5s
     strategy: least_connections
+
+    request_headers:
+      add:
+        X-Gateway: DUG
+        X-Version: v1
+
+      remove:
+        - X-Internal
+
+    response_headers:
+      add:
+        X-Powered-By: DUG
+
+      remove:
+        - Server
 
     upstreams:
       - url: http://localhost:3001

@@ -42,7 +42,13 @@ func NewRouter(cfg *config.Config) (http.Handler, error) {
 		// start the health check for the upstreams in background
 		pool.StartHealthCheck(5 * time.Second)
 
-		p := proxy.New(pool, cfg.Server.Retries)
+		p := proxy.New(
+			pool,
+			cfg.Server.Retries,
+			route.Timeout,
+			route.RequestHeaders,
+			route.ResponseHeaders,
+		)
 
 		manager := ratelimit.NewManager(
 			cfg.Server.RateLimit.RPS,

@@ -1,10 +1,12 @@
 package proxy
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"time"
 
+	"github.com/khareutkarshk/dug/internal/config"
 	"github.com/khareutkarshk/dug/internal/upstream"
 )
 
@@ -22,9 +24,12 @@ var retryableMethods = map[string]struct{}{
 const initialBackoff = 100 * time.Millisecond
 
 type RetryTransport struct {
-	Base    http.RoundTripper
-	Pool    *upstream.Pool
-	Retries int
+	Base            http.RoundTripper
+	Pool            *upstream.Pool
+	Retries         int
+	Timeout         time.Duration
+	RequestHeaders  config.HeaderRules
+	ResponseHeaders config.HeaderRules
 }
 
 // RoundTrip is called by ReverseProxy for every outgoing request.
@@ -101,7 +106,27 @@ func (t *RetryTransport) send(
 	if backend == nil {
 		return nil, ErrNoHealthyBackend
 	}
-	r := req.Clone(req.Context())
+
+	ctx := req.Context()
+
+	if t.Timeout > 0 {
+		var cancel context.CancelFunc
+
+		ctx, cancel = context.WithTimeout(ctx, t.Timeout)
+		defer cancel()
+	}
+
+	r := req.Clone(ctx)
+
+	// add headers
+	for k, v := range t.RequestHeaders.Add {
+		r.Header.Set(k, v)
+	}
+
+	// remove headers
+	for _, k := range t.RequestHeaders.Remove {
+		r.Header.Del(k)
+	}
 
 	r.URL.Scheme = backend.URL.Scheme
 	r.URL.Host = backend.URL.Host
