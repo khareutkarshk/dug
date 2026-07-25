@@ -23,8 +23,9 @@ func NewRouter(cfg *config.Config) (http.Handler, error) {
 	// loop through the routes and create a proxy for each route
 	for _, route := range cfg.Routes {
 
-		// create a new proxy for the target
-		provider := discovery.Static{Upstreams: route.Upstreams}
+		provider := discovery.Static{
+			Upstreams: route.Upstreams,
+		}
 
 		pool, err := upstream.New(provider)
 		if err != nil {

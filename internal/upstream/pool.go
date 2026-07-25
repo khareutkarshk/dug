@@ -60,32 +60,35 @@ type Pool struct {
 
 func New(provider discovery.Provider) (*Pool, error) {
 
-	pool := &Pool{}
+	pool := &Pool{
+		balancer: SmoothWeightedBalancer{},
+	}
 
-	pool.balancer = SmoothWeightedBalancer{}
-
-	endpoints, err := provider.GetEndpoints()
+	upstreams, err := provider.GetUpstreams()
 	if err != nil {
 		return nil, err
 	}
 
-	backends := make([]*Backend, 0, len(endpoints))
+	backends := make([]*Backend, 0, len(upstreams))
 
-	for _, ep := range endpoints {
+	for _, u := range upstreams {
 
-		backend := &Backend{
-			URL:    ep.URL,
-			Weight: max(ep.Weight, 1),
+		parsedURL, err := url.Parse(u.URL)
+		if err != nil {
+			return nil, err
 		}
 
-		backend.CircuitState.Store(CircuitClosed)
+		backend := &Backend{
+			URL:    parsedURL,
+			Weight: max(u.Weight, 1),
+		}
+
 		backend.Healthy.Store(true)
+		backend.CircuitState.Store(CircuitClosed)
 
 		backends = append(backends, backend)
 		pool.totalWeight += backend.Weight
 	}
-
-	// build the weighted round robin schedule
 
 	pool.backends = backends
 

@@ -1,12 +1,7 @@
 package discovery
 
-import "net/url"
-
-type Endpoint struct {
-	URL    *url.URL
-	Weight int
-}
+import "github.com/khareutkarshk/dug/internal/config"
 
 type Provider interface {
-	GetEndpoints() ([]Endpoint, error)
+	GetUpstreams() ([]config.Upstream, error)
 }
