@@ -18,8 +18,11 @@ func New(cfg *config.Config, handler http.Handler) *Server {
 	return &Server{
 		cfg: cfg,
 		httpServer: &http.Server{
-			Addr:    ":" + strconv.Itoa(cfg.Server.Port),
-			Handler: handler,
+			Addr:         ":" + strconv.Itoa(cfg.Server.Port),
+			Handler:      handler,
+			ReadTimeout:  cfg.Server.ReadTimeout,
+			WriteTimeout: cfg.Server.WriteTimeout,
+			IdleTimeout:  cfg.Server.IdleTimeout,
 		},
 	}
 }
