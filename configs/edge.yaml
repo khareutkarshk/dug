@@ -2,6 +2,11 @@ server:
   port: 8080
   retries: 0
 
+  tls:
+    enabled: false
+    cert_file: certs/server.crt
+    key_file: certs/server.key
+
   rate_limit:
     rps: 20
     burst: 20

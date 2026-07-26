@@ -36,6 +36,8 @@ type ServerConfig struct {
 		RPS   float64 `yaml:"rps"`
 		Burst int     `yaml:"burst"`
 	} `yaml:"rate_limit"`
+
+	TLS TLSConfig `yaml:"tls"`
 }
 
 type CORSConfig struct {
@@ -51,6 +53,12 @@ type CORSConfig struct {
 type Config struct {
 	Server ServerConfig `yaml:"server"`
 	Routes []Route      `yaml:"routes"`
+}
+
+type TLSConfig struct {
+	CertFile string `yaml:"cert_file"`
+	KeyFile  string `yaml:"key_file"`
+	Enabled  bool   `yaml:"enabled"`
 }
 
 func Load(path string) (*Config, error) {
