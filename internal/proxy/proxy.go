@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/http/httputil"
 	"time"
@@ -67,5 +68,9 @@ func New(pool *upstream.Pool, retries int, timeout time.Duration, requestHeaders
 }
 
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if isWebSocket(r) {
+		// Temporary
+		slog.Info("WebSocket request detected")
+	}
 	p.proxy.ServeHTTP(w, r)
 }

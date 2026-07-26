@@ -18,7 +18,7 @@ func Logger(next http.Handler) http.Handler {
 
 		rw := httpx.NewResponseWriter(w)
 
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(rw, r)
 
 		logger.Log.Info(
 			"http request",

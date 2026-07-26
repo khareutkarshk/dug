@@ -3,7 +3,7 @@ server:
   retries: 0
 
   tls:
-    enabled: true
+    enabled: false
     cert_file: certs/server.crt
     key_file: certs/server.key
 
@@ -60,8 +60,5 @@ routes:
       max_age: 3600
 
     upstreams:
-      - url: http://localhost:3001
-        weight: 5
-
-      - url: http://localhost:3002
-        weight: 3
+      - url: http://localhost:3003
+        weight: 1
