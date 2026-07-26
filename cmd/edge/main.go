@@ -10,94 +10,67 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/khareutkarshk/dug/internal/app"
 	"github.com/khareutkarshk/dug/internal/config"
 	"github.com/khareutkarshk/dug/internal/logger"
 	"github.com/khareutkarshk/dug/internal/metrics"
-	"github.com/khareutkarshk/dug/internal/router"
-	"github.com/khareutkarshk/dug/internal/server"
 )
 
 func main() {
 
-	// Load configuration
-	cfg, err := config.Load("configs/edge.yaml")
-
 	metrics.Register()
 
+	cfg, err := config.Load("configs/edge.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	logger.Log.Info(
-		"config loaded", "routes", len(cfg.Routes),
+		"config loaded",
+		"routes", len(cfg.Routes),
 	)
 
-	r, err := router.NewRouter(cfg)
-
+	edge, err := app.New(cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	manager := router.NewManager(r)
-
-	err = config.Watch("configs/edge.yaml", func() {
-
-		cfg, err := config.Load("configs/edge.yaml")
-		if err != nil {
-			logger.Log.Error("reload failed", "error", err)
-			return
-		}
-
-		newRouter, err := router.NewRouter(cfg)
-		if err != nil {
-			logger.Log.Error("router build failed", "error", err)
-			return
-		}
-
-		manager.Update(newRouter)
-
-		logger.Log.Info("configuration reloaded")
-	})
-
+	err = edge.EnableConfigReload("configs/edge.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	srv := server.New(cfg, manager)
 
 	go func() {
-		if err := srv.Start(); err != nil &&
+		if err := edge.Server.Start(); err != nil &&
 			!errors.Is(err, http.ErrServerClosed) {
-
 			log.Fatal(err)
 		}
 	}()
 
-	// create a channel to listen for OS signals
 	quit := make(chan os.Signal, 1)
 
-	// Notify the channel on interrupt or terminate signals
-	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(
+		quit,
+		os.Interrupt,
+		syscall.SIGTERM,
+	)
 
-	// Wait until a signal is received
 	<-quit
 
 	signal.Stop(quit)
 
-	logger.Log.Info("Shutting signal received, shutting down server...")
+	logger.Log.Info("Shutdown signal received")
 
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
 		5*time.Second,
 	)
-
 	defer cancel()
 
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Printf("Shutdown returned error: %T: %v", err, err)
+	if err := edge.Server.Shutdown(ctx); err != nil {
+		log.Printf("Shutdown error: %v", err)
 		return
 	}
 
 	logger.Log.Info("Server gracefully stopped")
-
 }
