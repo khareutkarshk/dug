@@ -90,3 +90,17 @@ Every feature is implemented to understand **how** it works—not just to use a 
 If you have suggestions or feedback, I'd love to hear them.
 
 ⭐ If you find the project interesting, consider giving it a star.
+
+--- 
+## HTTPS
+
+Generate development certificates:
+
+mkdir certs
+
+openssl req -x509 \
+-newkey rsa:4096 \
+-keyout certs/server.key \
+-out certs/server.crt \
+-days 365 \
+-nodes
