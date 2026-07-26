@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -64,9 +63,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	addr := fmt.Sprintf(":%d", cfg.Server.Port)
-
-	srv := server.New(addr, manager)
+	srv := server.New(cfg, manager)
 
 	go func() {
 		if err := srv.Start(); err != nil &&

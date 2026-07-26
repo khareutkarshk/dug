@@ -4,17 +4,21 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"strconv"
+
+	"github.com/khareutkarshk/dug/internal/config"
 )
 
 type Server struct {
 	httpServer *http.Server
+	cfg        *config.Config
 }
 
-func New(addr string, handler http.Handler) *Server {
-
+func New(cfg *config.Config, handler http.Handler) *Server {
 	return &Server{
+		cfg: cfg,
 		httpServer: &http.Server{
-			Addr:    addr,
+			Addr:    ":" + strconv.Itoa(cfg.Server.Port),
 			Handler: handler,
 		},
 	}
@@ -23,6 +27,18 @@ func New(addr string, handler http.Handler) *Server {
 func (s *Server) Start() error {
 
 	log.Printf("Edge listening on %s", s.httpServer.Addr)
+
+	if s.cfg.Server.TLS.Enabled {
+		log.Println("HTTPS enabled")
+
+		return s.httpServer.ListenAndServeTLS(
+			s.cfg.Server.TLS.CertFile,
+			s.cfg.Server.TLS.KeyFile,
+		)
+	}
+
+	log.Println("HTTP enabled")
+
 	return s.httpServer.ListenAndServe()
 }
 
