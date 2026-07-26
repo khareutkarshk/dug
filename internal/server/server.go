@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"log"
+	"net"
 	"net/http"
 	"strconv"
 
@@ -12,6 +13,7 @@ import (
 type Server struct {
 	httpServer *http.Server
 	cfg        *config.Config
+	listener   net.Listener
 }
 
 func New(cfg *config.Config, handler http.Handler) *Server {
@@ -29,12 +31,20 @@ func New(cfg *config.Config, handler http.Handler) *Server {
 
 func (s *Server) Start() error {
 
-	log.Printf("Edge listening on %s", s.httpServer.Addr)
+	var err error
+
+	s.listener, err = net.Listen("tcp", s.httpServer.Addr)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Edge listening on %s", s.listener.Addr())
 
 	if s.cfg.Server.TLS.Enabled {
 		log.Println("HTTPS enabled")
 
-		return s.httpServer.ListenAndServeTLS(
+		return s.httpServer.ServeTLS(
+			s.listener,
 			s.cfg.Server.TLS.CertFile,
 			s.cfg.Server.TLS.KeyFile,
 		)
@@ -42,7 +52,7 @@ func (s *Server) Start() error {
 
 	log.Println("HTTP enabled")
 
-	return s.httpServer.ListenAndServe()
+	return s.httpServer.Serve(s.listener)
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
@@ -50,4 +60,11 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	log.Println("Shutting down server...")
 
 	return s.httpServer.Shutdown(ctx)
+}
+
+func (s *Server) Addr() string {
+	if s.listener == nil {
+		return ""
+	}
+	return s.listener.Addr().String()
 }
