@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/khareutkarshk/dug/internal/config"
 	"github.com/khareutkarshk/dug/test/testutil"
 	"github.com/stretchr/testify/require"
 )
@@ -25,8 +26,18 @@ func TestRetry(t *testing.T) {
 		w.Write([]byte("success"))
 	})
 
-	gateway := testutil.NewGateway(t, backend.URL)
-
+	gateway := testutil.NewGateway(
+		t,
+		testutil.GatewayOptions{
+			Retries: 2,
+			Upstreams: []config.Upstream{
+				{
+					URL:    backend.URL,
+					Weight: 1,
+				},
+			},
+		},
+	)
 	resp, err := http.Get(gateway.URL)
 	require.NoError(t, err)
 	defer resp.Body.Close()

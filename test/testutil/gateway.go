@@ -15,7 +15,11 @@ type Gateway struct {
 	URL string
 }
 
-func NewGateway(t *testing.T, upstream string, opts ...GatewayOptions) *Gateway {
+func NewGateway(
+	t *testing.T,
+	opts ...GatewayOptions,
+) *Gateway {
+
 	t.Helper()
 
 	options := GatewayOptions{
@@ -30,7 +34,7 @@ func NewGateway(t *testing.T, upstream string, opts ...GatewayOptions) *Gateway 
 	cfg := &config.Config{
 		Server: config.ServerConfig{
 			Port:         0,
-			Retries:      2,
+			Retries:      options.Retries,
 			ReadTimeout:  5 * time.Second,
 			WriteTimeout: 5 * time.Second,
 			IdleTimeout:  30 * time.Second,
@@ -40,10 +44,10 @@ func NewGateway(t *testing.T, upstream string, opts ...GatewayOptions) *Gateway 
 				Burst: 1000,
 			},
 		},
+
 		Routes: []config.Route{
 			{
-				Path: "/",
-
+				Path:    "/",
 				Timeout: options.RouteTimeout,
 
 				RequestHeaders: config.HeaderRules{
@@ -51,20 +55,21 @@ func NewGateway(t *testing.T, upstream string, opts ...GatewayOptions) *Gateway 
 						"X-Gateway": "DUG",
 						"X-Version": "v1",
 					},
-					Remove: []string{"X-Internal"},
+					Remove: []string{
+						"X-Internal",
+					},
 				},
+
 				ResponseHeaders: config.HeaderRules{
 					Add: map[string]string{
 						"X-Powered-By": "DUG",
 					},
-					Remove: []string{"Server"},
-				},
-				Upstreams: []config.Upstream{
-					{
-						URL:    upstream,
-						Weight: 1,
+					Remove: []string{
+						"Server",
 					},
 				},
+
+				Upstreams: options.Upstreams,
 			},
 		},
 	}
@@ -81,7 +86,6 @@ func NewGateway(t *testing.T, upstream string, opts ...GatewayOptions) *Gateway 
 		}
 	}()
 
-	// Wait until the server is actually listening.
 	<-edge.Server.Ready()
 
 	t.Cleanup(func() {

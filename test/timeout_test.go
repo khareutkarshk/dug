@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/khareutkarshk/dug/internal/config"
 	"github.com/khareutkarshk/dug/test/testutil"
 	"github.com/stretchr/testify/require"
 )
@@ -17,9 +18,14 @@ func TestTimeout(t *testing.T) {
 
 	gateway := testutil.NewGateway(
 		t,
-		backend.URL,
 		testutil.GatewayOptions{
-			RouteTimeout: 1 * time.Second,
+			RouteTimeout: time.Second,
+			Upstreams: []config.Upstream{
+				{
+					URL:    backend.URL,
+					Weight: 1,
+				},
+			},
 		},
 	)
 
