@@ -21,6 +21,7 @@ func NewGateway(t *testing.T, upstream string) *Gateway {
 	cfg := &config.Config{
 		Server: config.ServerConfig{
 			Port:         0,
+			Retries:      2,
 			ReadTimeout:  5 * time.Second,
 			WriteTimeout: 5 * time.Second,
 			IdleTimeout:  30 * time.Second,
