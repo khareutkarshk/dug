@@ -4,7 +4,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/khareutkarshk/dug.svg)](https://pkg.go.dev/github.com/khareutkarshk/dug)
 [![Release](https://img.shields.io/github/v/release/khareutkarshk/dug)](https://github.com/khareutkarshk/dug/releases)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/khareutkarshk/dug)](https://github.com/khareutkarshk/dug)
-[![License](https://img.shields.io/github/license/khareutkarshk/dug)](LICENSE)
+[![License](https://img.shields.io/github/license/khareutkarshk/dug?style=flat-square)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/khareutkarshk/dug?style=social)](https://github.com/khareutkarshk/dug/stargazers)
 
 A lightweight, production-inspired API Gateway built from scratch in Go.
