@@ -32,16 +32,18 @@ type ServerConfig struct {
 	Port    int `yaml:"port"`
 	Retries int `yaml:"retries"`
 
-	RateLimit struct {
-		RPS   float64 `yaml:"rps"`
-		Burst int     `yaml:"burst"`
-	} `yaml:"rate_limit"`
+	RateLimit RateLimitConfig `yaml:"rate_limit"`
 
 	TLS TLSConfig `yaml:"tls"`
 
 	ReadTimeout  time.Duration `yaml:"read_timeout"`
 	WriteTimeout time.Duration `yaml:"write_timeout"`
 	IdleTimeout  time.Duration `yaml:"idle_timeout"`
+}
+
+type RateLimitConfig struct {
+	RPS   float64 `yaml:"rps"`
+	Burst int     `yaml:"burst"`
 }
 
 type CORSConfig struct {

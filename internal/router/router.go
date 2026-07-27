@@ -54,22 +54,22 @@ func NewRouter(cfg *config.Config) (http.Handler, error) {
 			route.ResponseHeaders,
 		)
 
-		manager := ratelimit.NewManager(
-			cfg.Server.RateLimit.RPS,
-			cfg.Server.RateLimit.Burst,
-		)
+		handler := http.Handler(p)
 
-		handler := middleware.RequireHealthyBackend(pool)(
-			middleware.CORS(route.CORS)(
-				middleware.RateLimit(manager)(
-					middleware.RequestId(
-						middleware.Logger(
-							middleware.Metrics(p),
-						),
-					),
-				),
-			),
-		)
+		handler = middleware.Metrics(handler)
+		handler = middleware.Logger(handler)
+		handler = middleware.RequestId(handler)
+
+		if cfg.Server.RateLimit.RPS > 0 && cfg.Server.RateLimit.Burst > 0 {
+			manager := ratelimit.NewManager(
+				cfg.Server.RateLimit.RPS,
+				cfg.Server.RateLimit.Burst,
+			)
+			handler = middleware.RateLimit(manager)(handler)
+		}
+
+		handler = middleware.CORS(route.CORS)(handler)
+		handler = middleware.RequireHealthyBackend(pool)(handler)
 
 		// register the proxy with the mux
 		mux.Handle(route.Path, handler)

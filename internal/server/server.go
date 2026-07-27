@@ -14,11 +14,14 @@ type Server struct {
 	httpServer *http.Server
 	cfg        *config.Config
 	listener   net.Listener
+
+	ready chan struct{}
 }
 
 func New(cfg *config.Config, handler http.Handler) *Server {
 	return &Server{
-		cfg: cfg,
+		cfg:   cfg,
+		ready: make(chan struct{}),
 		httpServer: &http.Server{
 			Addr:         ":" + strconv.Itoa(cfg.Server.Port),
 			Handler:      handler,
@@ -37,6 +40,8 @@ func (s *Server) Start() error {
 	if err != nil {
 		return err
 	}
+
+	close(s.ready)
 
 	log.Printf("Edge listening on %s", s.listener.Addr())
 
@@ -67,4 +72,8 @@ func (s *Server) Addr() string {
 		return ""
 	}
 	return s.listener.Addr().String()
+}
+
+func (s *Server) Ready() <-chan struct{} {
+	return s.ready
 }
