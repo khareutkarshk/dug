@@ -15,8 +15,17 @@ type Gateway struct {
 	URL string
 }
 
-func NewGateway(t *testing.T, upstream string) *Gateway {
+func NewGateway(t *testing.T, upstream string, opts ...GatewayOptions) *Gateway {
 	t.Helper()
+
+	options := GatewayOptions{
+		RouteTimeout: 5 * time.Second,
+		Retries:      2,
+	}
+
+	if len(opts) > 0 {
+		options = opts[0]
+	}
 
 	cfg := &config.Config{
 		Server: config.ServerConfig{
@@ -34,6 +43,8 @@ func NewGateway(t *testing.T, upstream string) *Gateway {
 		Routes: []config.Route{
 			{
 				Path: "/",
+
+				Timeout: options.RouteTimeout,
 
 				RequestHeaders: config.HeaderRules{
 					Add: map[string]string{
