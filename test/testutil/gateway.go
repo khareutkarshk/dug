@@ -33,6 +33,14 @@ func NewGateway(t *testing.T, upstream string) *Gateway {
 		Routes: []config.Route{
 			{
 				Path: "/",
+
+				RequestHeaders: config.HeaderRules{
+					Add: map[string]string{
+						"X-Gateway": "DUG",
+						"X-Version": "v1",
+					},
+					Remove: []string{"X-Internal"},
+				},
 				Upstreams: []config.Upstream{
 					{
 						URL:    upstream,
