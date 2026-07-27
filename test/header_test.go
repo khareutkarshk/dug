@@ -10,26 +10,28 @@ import (
 )
 
 func TestRequestHeaders(t *testing.T) {
-	backend := testutil.NewBackend(func(w http.ResponseWriter, r *http.Request) {
+	var gatewayHeader string
+	var versionHeader string
+	var internalHeader string
 
-		require.Equal(t, "DUG", r.Header.Get("X-Gateway"))
-		require.Equal(t, "v1", r.Header.Get("X-Version"))
-		require.Empty(t, r.Header.Get("X-Internal"))
+	backend := testutil.NewBackend(func(w http.ResponseWriter, r *http.Request) {
+		gatewayHeader = r.Header.Get("X-Gateway")
+		versionHeader = r.Header.Get("X-Version")
+		internalHeader = r.Header.Get("X-Internal")
 
 		w.WriteHeader(http.StatusOK)
 	})
+	defer backend.Close()
 
-	gateway := testutil.NewGateway(
-		t,
-		testutil.GatewayOptions{
-			Upstreams: []config.Upstream{
-				{
-					URL:    backend.URL,
-					Weight: 1,
-				},
+	gateway := testutil.NewGateway(t, testutil.GatewayOptions{
+		Upstreams: []config.Upstream{
+			{
+				URL:    backend.URL,
+				Weight: 1,
 			},
 		},
-	)
+	})
+
 	req, err := http.NewRequest(http.MethodGet, gateway.URL, nil)
 	require.NoError(t, err)
 
@@ -40,4 +42,8 @@ func TestRequestHeaders(t *testing.T) {
 	defer resp.Body.Close()
 
 	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	require.Equal(t, "DUG", gatewayHeader)
+	require.Equal(t, "v1", versionHeader)
+	require.Empty(t, internalHeader)
 }

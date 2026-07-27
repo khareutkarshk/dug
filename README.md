@@ -1,33 +1,46 @@
 # DUG (Distributed Unified Gateway)
 
-A lightweight API Gateway built from scratch in Go to understand how production gateways work under the hood.
+[![CI](https://github.com/khareutkarshk/dug/actions/workflows/ci.yml/badge.svg)](https://github.com/khareutkarshk/dug/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/khareutkarshk/dug)](https://goreportcard.com/report/github.com/khareutkarshk/dug)
+[![Go Reference](https://pkg.go.dev/badge/github.com/khareutkarshk/dug.svg)](https://pkg.go.dev/github.com/khareutkarshk/dug)
+[![Release](https://img.shields.io/github/v/release/khareutkarshk/dug)](https://github.com/khareutkarshk/dug/releases)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/khareutkarshk/dug)](https://github.com/khareutkarshk/dug)
+[![License](https://img.shields.io/github/license/khareutkarshk/dug)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/khareutkarshk/dug?style=social)](https://github.com/khareutkarshk/dug/stargazers)
+
+A lightweight, production-inspired API Gateway built from scratch in Go.
+
+> **Build. Learn. Route.**
+
+DUG is an API Gateway designed to understand how modern gateways like **NGINX**, **Traefik**, **Envoy**, and **Kong** work internally by implementing their core building blocks from first principles.
+
+Rather than wrapping existing gateway libraries, DUG focuses on building the networking, reliability, and traffic management components yourself to gain a deeper understanding of production backend infrastructure.
 
 ---
 
-## About
+# ✨ Features
 
-DUG (Distributed Unified Gateway) is an API Gateway built from scratch to learn Go by solving real backend engineering problems instead of building another CRUD application.
+## 🚦 Traffic Management
 
-The name is inspired by **Dug 🐶**, the lovable golden retriever from Pixar's *Up*—one of my favorite movies.
-
-The goal of this project isn't to compete with gateways like **NGINX**, **Traefik**, **Kong**, or **Envoy**, but to understand the engineering decisions behind them by implementing their core building blocks from scratch.
-
----
-
-## Features
-
-### Traffic Management
 - ✅ Reverse Proxy
 - ✅ Route-based Routing
 - ✅ YAML Configuration
 - ✅ Graceful Shutdown
+- ✅ WebSocket Proxy
+- ✅ Dynamic Configuration Reload
 
-### Load Balancing
+---
+
+## ⚖️ Load Balancing
+
 - ✅ Round Robin
 - ✅ Smooth Weighted Round Robin (SWRR)
 - ✅ Least Connections
 
-### Reliability
+---
+
+## 🛡 Reliability
+
 - ✅ Retry Mechanism
 - ✅ Exponential Backoff
 - ✅ Active Health Checks
@@ -35,61 +48,75 @@ The goal of this project isn't to compete with gateways like **NGINX**, **Traefi
 - ✅ Circuit Breaker
 - ✅ Request Timeouts
 
-### Security & Traffic Control
-- ✅ HTTPS / TLS Support
+---
+
+## 🔒 Security & Traffic Control
+
+- ✅ HTTPS / TLS
 - ✅ Per-IP Rate Limiting
 - ✅ CORS
 - ✅ Request Header Manipulation
 - ✅ Response Header Manipulation
 
-### Observability
+---
+
+## 📊 Observability
+
 - ✅ Prometheus Metrics
 - ✅ Structured Logging (`slog`)
 - ✅ Request IDs
 
-### Configuration
-- ✅ Hot Configuration Reload
-- ✅ Atomic Router Reload
+---
 
-### Service Discovery
+## 🔍 Service Discovery
+
 - ✅ Static Service Discovery
 - ✅ DNS Service Discovery
 
 ---
 
-## Architecture
+## ⚙️ Configuration
+
+- ✅ YAML Configuration
+- ✅ Hot Configuration Reload
+- ✅ Atomic Router Reload
+
+---
+
+# 🏗 Architecture
 
 ```text
-                      Client
-                         │
-                    HTTP / HTTPS
-                         │
-                         ▼
-                ┌──────────────────┐
-                │       DUG        │
-                ├──────────────────┤
-                │ Reverse Proxy    │
-                │ Routing          │
-                │ Load Balancer    │
-                │ Retry            │
-                │ Health Checks    │
-                │ Circuit Breaker  │
-                │ Rate Limiter     │
-                │ Header Middleware│
-                │ Service Discovery│
-                │ Metrics & Logs   │
-                └────────┬─────────┘
-                         │
-          ┌──────────────┼──────────────┐
-          ▼              ▼              ▼
-      Backend A      Backend B      Backend C
+                     Client
+                        │
+                 HTTP / HTTPS
+                        │
+                        ▼
+              ┌────────────────────┐
+              │        DUG         │
+              ├────────────────────┤
+              │ Reverse Proxy      │
+              │ Router             │
+              │ Load Balancer      │
+              │ Retry Engine       │
+              │ Health Checks      │
+              │ Circuit Breaker    │
+              │ Rate Limiter       │
+              │ Header Middleware  │
+              │ Service Discovery  │
+              │ Metrics            │
+              │ Logging            │
+              └─────────┬──────────┘
+                        │
+        ┌───────────────┼───────────────┐
+        ▼               ▼               ▼
+    Backend A       Backend B       Backend C
 ```
 
 ---
 
-## Getting Started
+# 🚀 Getting Started
 
-Clone the repository:
+## Clone the repository
 
 ```bash
 git clone https://github.com/khareutkarshk/dug.git
@@ -97,13 +124,13 @@ git clone https://github.com/khareutkarshk/dug.git
 cd dug
 ```
 
-Install dependencies:
+## Install dependencies
 
 ```bash
 go mod tidy
 ```
 
-Generate development TLS certificates:
+## Generate local TLS certificates
 
 ```bash
 mkdir certs
@@ -116,7 +143,7 @@ openssl req -x509 \
 -nodes
 ```
 
-Start the gateway:
+## Start the gateway
 
 ```bash
 go run ./cmd/edge
@@ -124,23 +151,38 @@ go run ./cmd/edge
 
 ---
 
-## Configuration
+# ⚙️ Configuration
 
 DUG is configured using a YAML file.
 
-Example features supported by configuration:
+Configuration supports:
 
 - Routes
+- Multiple upstreams
 - Load balancing strategy
 - Retry policy
+- Health checks
 - Timeouts
-- TLS
+- HTTPS / TLS
 - CORS
 - Request & Response Headers
 - Rate Limiting
 - Service Discovery
 
-Configuration lives in:
+Example configuration:
+
+```yaml
+server:
+  port: 8080
+
+routes:
+  - path: /
+    upstreams:
+      - url: http://localhost:3001
+        weight: 1
+```
+
+Default configuration:
 
 ```text
 configs/edge.yaml
@@ -148,39 +190,121 @@ configs/edge.yaml
 
 ---
 
-## Project Structure
+# 📁 Project Structure
 
 ```text
-cmd/
-configs/
-internal/
-    config/
-    discovery/
-    health/
-    middleware/
-    proxy/
-    router/
-    server/
-    upstream/
-examples/
+.
+├── cmd/
+│   └── edge/
+├── configs/
+├── examples/
+│   ├── backend/
+│   ├── backend2/
+│   └── websocket/
+├── internal/
+│   ├── app/
+│   ├── config/
+│   ├── discovery/
+│   ├── httpx/
+│   ├── logger/
+│   ├── metrics/
+│   ├── middleware/
+│   ├── proxy/
+│   ├── ratelimit/
+│   ├── router/
+│   ├── server/
+│   └── upstream/
+├── test/
+└── README.md
 ```
 
 ---
 
-## Roadmap
+# 🧪 Testing
 
-### v0.1.0
-- ✅ HTTPS / TLS
-- 🚧 WebSocket Support
-- 🚧 Integration Tests
-- 🚧 Docker Image
-- 🚧 GitHub Actions
-- 🚧 Documentation Improvements
+Run all tests
 
-### Future
+```bash
+go test ./...
+```
+
+Run with race detector
+
+```bash
+go test ./... -race
+```
+
+Generate coverage
+
+```bash
+go test ./... -cover
+```
+
+---
+
+# 📈 Current Status
+
+DUG currently includes:
+
+- Reverse Proxy
+- Route-based Routing
+- Multiple Load Balancing Algorithms
+- Retry Engine
+- Circuit Breaker
+- Active & Passive Health Checks
+- HTTPS
+- WebSocket Proxy
+- Dynamic Configuration Reload
+- DNS Service Discovery
+- Rate Limiting
+- Header Manipulation
+- Prometheus Metrics
+- Structured Logging
+- Request IDs
+
+The core gateway functionality is complete and stable. The next milestone focuses on improving developer experience, packaging, and documentation.
+
+---
+
+# 🛣 Roadmap
+
+## v1.0 — Developer Experience
+
+### CLI
+
+- [ ] `dug run`
+- [ ] `dug validate`
+- [ ] `dug version`
+
+### Distribution
+
+- [ ] Docker Image
+- [ ] GitHub Releases
+- [ ] Pre-built binaries
+- [ ] `go install` support
+
+### Documentation
+
+- [ ] Installation Guide
+- [ ] Configuration Reference
+- [ ] Feature Documentation
+- [ ] Example Configurations
+
+### CI/CD
+
+- [ ] GitHub Actions
+- [ ] Go Race Tests
+- [ ] golangci-lint
+- [ ] Automated Releases
+
+---
+
+## Future
+
 - JWT Authentication
 - API Keys
 - OpenTelemetry
+- Response Compression
 - Response Caching
 - HTTP/2
 - HTTP/3
@@ -188,21 +312,53 @@ examples/
 - Consul Service Discovery
 - Canary Routing
 - Blue-Green Deployments
+- Plugin System
 
 ---
 
-## Why this project?
+# 💡 Why DUG?
 
-I'm documenting my journey of learning Go by building production-inspired backend infrastructure in public.
+DUG started as a way to learn Go by building production-inspired backend infrastructure instead of another CRUD application.
 
-Rather than relying on existing libraries, every feature is implemented from first principles to understand:
+Every major component is implemented from scratch to understand:
 
-- how gateways route traffic
-- how retries and circuit breakers improve reliability
-- how load balancing algorithms work
-- how service discovery integrates with routing
-- how production-ready networking software is designed
+- Reverse proxies
+- Load balancing algorithms
+- Circuit breakers
+- Retry strategies
+- Health checking
+- Service discovery
+- Concurrent programming
+- High-performance HTTP servers
+- Production networking patterns
 
-If you have suggestions, feedback, or ideas for improving DUG, I'd love to hear them.
+The name is inspired by **Dug 🐶**, the lovable golden retriever from Pixar's *Up*.
 
-⭐ If you find the project interesting, consider giving it a star!
+While DUG began as a learning project, it has evolved into a fully functional API Gateway that continues to grow with production-inspired features.
+
+---
+
+# 🤝 Contributing
+
+Contributions, bug reports, ideas, and discussions are always welcome.
+
+If you'd like to contribute:
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Open a Pull Request
+
+---
+
+# ⭐ Support
+
+If you found DUG useful or interesting, consider giving the repository a **Star**.
+
+It helps others discover the project and motivates future development.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License. See the `LICENSE` file for details.
