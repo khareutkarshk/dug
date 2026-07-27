@@ -26,7 +26,7 @@ func NewGateway(
 	options := GatewayOptions{
 		RouteTimeout: 5 * time.Second,
 		Retries:      2,
-		strategy:     upstream.StrategySmoothWeighted,
+		Strategy:     upstream.StrategySmoothWeighted,
 	}
 
 	if len(opts) > 0 {
@@ -73,7 +73,7 @@ func NewGateway(
 
 				Upstreams: options.Upstreams,
 
-				Strategy: options.strategy,
+				Strategy: options.Strategy,
 			},
 		},
 	}
