@@ -10,4 +10,5 @@ type GatewayOptions struct {
 	RouteTimeout time.Duration
 	Retries      int
 	Upstreams    []config.Upstream
+	strategy     string
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/khareutkarshk/dug/internal/app"
 	"github.com/khareutkarshk/dug/internal/config"
+	"github.com/khareutkarshk/dug/internal/upstream"
 )
 
 type Gateway struct {
@@ -25,6 +26,7 @@ func NewGateway(
 	options := GatewayOptions{
 		RouteTimeout: 5 * time.Second,
 		Retries:      2,
+		strategy:     upstream.StrategySmoothWeighted,
 	}
 
 	if len(opts) > 0 {
@@ -70,6 +72,8 @@ func NewGateway(
 				},
 
 				Upstreams: options.Upstreams,
+
+				Strategy: options.strategy,
 			},
 		},
 	}
