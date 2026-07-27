@@ -22,7 +22,7 @@ func (LeastConnectionsBalancer) Next(p *Pool) *Backend {
 
 		// skip open circuits.
 		if backend.CircuitState.Load() == CircuitOpen {
-			if time.Now().Unix() < backend.OpenUntil.Load() {
+			if time.Now().UnixMilli() < backend.OpenUntil.Load() {
 				continue
 			}
 

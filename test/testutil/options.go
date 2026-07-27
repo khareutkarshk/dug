@@ -11,4 +11,7 @@ type GatewayOptions struct {
 	Retries      int
 	Upstreams    []config.Upstream
 	Strategy     string
+
+	RateLimitRPS   float64
+	RateLimitBurst int
 }

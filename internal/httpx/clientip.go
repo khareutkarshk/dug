@@ -32,8 +32,8 @@ func ClientIp(r *http.Request) string {
 	// fallback to the TCP connection address.
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
-		return host
+		return r.RemoteAddr
 	}
 
-	return r.RemoteAddr
+	return host
 }

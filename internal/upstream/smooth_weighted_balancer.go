@@ -25,7 +25,7 @@ func (SmoothWeightedBalancer) Next(p *Pool) *Backend {
 		// Handle open circuits first.
 		if state == CircuitOpen {
 
-			if time.Now().Unix() < backend.OpenUntil.Load() {
+			if time.Now().UnixMilli() < backend.OpenUntil.Load() {
 				continue
 			}
 
@@ -61,10 +61,6 @@ func (SmoothWeightedBalancer) Next(p *Pool) *Backend {
 		if selected == nil || backend.CurrentWeight > selected.CurrentWeight {
 			selected = backend
 		}
-	}
-
-	if selected == nil {
-		return nil
 	}
 
 	// reduce the current weight of the selected backend by the total weight

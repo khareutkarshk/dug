@@ -138,7 +138,7 @@ func (b *Backend) ReportFailure() {
 func (b *Backend) OpenCircuit() {
 	b.Healthy.Store(false)
 	b.CircuitState.Store(CircuitOpen)
-	b.OpenUntil.Store(time.Now().Add(CircuitOpenFor).Unix())
+	b.OpenUntil.Store(time.Now().Add(CircuitOpenFor).UnixMilli())
 	b.HalfOpenInFlight.Store(false)
 }
 
@@ -158,7 +158,7 @@ func (p *Pool) HasHealthyBackend() bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	now := time.Now().Unix()
+	now := time.Now().UnixMilli()
 
 	for _, backend := range p.backends {
 

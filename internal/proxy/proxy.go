@@ -53,12 +53,16 @@ func New(pool *upstream.Pool, retries int, timeout time.Duration, requestHeaders
 
 		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
 
-			if errors.Is(err, context.DeadlineExceeded) {
+			switch {
+			case errors.Is(err, context.DeadlineExceeded):
 				http.Error(w, "Gateway Timeout", http.StatusGatewayTimeout)
-				return
-			}
 
-			http.Error(w, "Bad Gateway", http.StatusBadGateway)
+			case errors.Is(err, ErrNoHealthyBackend):
+				http.Error(w, "No healthy upstreams", http.StatusServiceUnavailable)
+
+			default:
+				http.Error(w, "Bad Gateway", http.StatusBadGateway)
+			}
 		},
 	}
 

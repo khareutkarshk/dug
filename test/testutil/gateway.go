@@ -24,9 +24,11 @@ func NewGateway(
 	t.Helper()
 
 	options := GatewayOptions{
-		RouteTimeout: 5 * time.Second,
-		Retries:      2,
-		Strategy:     upstream.StrategySmoothWeighted,
+		RouteTimeout:   5 * time.Second,
+		Retries:        2,
+		Strategy:       upstream.StrategySmoothWeighted,
+		RateLimitRPS:   1000,
+		RateLimitBurst: 1000,
 	}
 
 	if len(opts) > 0 {
@@ -42,8 +44,8 @@ func NewGateway(
 			IdleTimeout:  30 * time.Second,
 
 			RateLimit: config.RateLimitConfig{
-				RPS:   1000,
-				Burst: 1000,
+				RPS:   options.RateLimitRPS,
+				Burst: options.RateLimitBurst,
 			},
 		},
 

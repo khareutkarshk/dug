@@ -69,7 +69,6 @@ func NewRouter(cfg *config.Config) (http.Handler, error) {
 		}
 
 		handler = middleware.CORS(route.CORS)(handler)
-		handler = middleware.RequireHealthyBackend(pool)(handler)
 
 		// register the proxy with the mux
 		mux.Handle(route.Path, handler)

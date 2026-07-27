@@ -101,7 +101,6 @@ func (t *RetryTransport) send(
 	base http.RoundTripper,
 	req *http.Request,
 ) (*http.Response, error) {
-
 	backend := t.Pool.Next()
 	if backend == nil {
 		return nil, ErrNoHealthyBackend
