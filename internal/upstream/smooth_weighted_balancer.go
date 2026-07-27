@@ -20,14 +20,11 @@ func (SmoothWeightedBalancer) Next(p *Pool) *Backend {
 
 	for _, backend := range p.backends {
 
-		// skip unhealthy backends
-		if !backend.Healthy.Load() {
-			continue
-		}
+		state := backend.CircuitState.Load()
 
-		// Handle open circuts
+		// Handle open circuits first.
+		if state == CircuitOpen {
 
-		if backend.CircuitState.Load() == CircuitOpen {
 			if time.Now().Unix() < backend.OpenUntil.Load() {
 				continue
 			}
@@ -38,15 +35,22 @@ func (SmoothWeightedBalancer) Next(p *Pool) *Backend {
 			) {
 				backend.EnterHalfOpen()
 			}
+
+			state = CircuitHalfOpen
 		}
 
-		// allow only one request to a half-open backend
-
-		if backend.CircuitState.Load() == CircuitHalfOpen {
+		// Allow only one request to a half-open backend.
+		if state == CircuitHalfOpen {
 
 			if !backend.HalfOpenInFlight.CompareAndSwap(false, true) {
 				continue
 			}
+		}
+
+		// Skip unhealthy backends only if they are not part of the
+		// circuit breaker flow.
+		if !backend.Healthy.Load() && state == CircuitClosed {
+			continue
 		}
 
 		// smooth weighted round robin algorithm

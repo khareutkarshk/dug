@@ -15,7 +15,10 @@ import (
 // a backend is marked unhealthy.
 const (
 	failureThreshold = 3
-	circuitOpenFor   = 30 * time.Second
+)
+
+var (
+	CircuitOpenFor = 30 * time.Second
 )
 
 const (
@@ -135,7 +138,7 @@ func (b *Backend) ReportFailure() {
 func (b *Backend) OpenCircuit() {
 	b.Healthy.Store(false)
 	b.CircuitState.Store(CircuitOpen)
-	b.OpenUntil.Store(time.Now().Add(circuitOpenFor).Unix())
+	b.OpenUntil.Store(time.Now().Add(CircuitOpenFor).Unix())
 	b.HalfOpenInFlight.Store(false)
 }
 
