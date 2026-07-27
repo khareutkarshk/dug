@@ -1,6 +1,5 @@
 # DUG (Distributed Unified Gateway)
 
-[![CI](https://github.com/khareutkarshk/dug/actions/workflows/ci.yml/badge.svg)](https://github.com/khareutkarshk/dug/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/khareutkarshk/dug)](https://goreportcard.com/report/github.com/khareutkarshk/dug)
 [![Go Reference](https://pkg.go.dev/badge/github.com/khareutkarshk/dug.svg)](https://pkg.go.dev/github.com/khareutkarshk/dug)
 [![Release](https://img.shields.io/github/v/release/khareutkarshk/dug)](https://github.com/khareutkarshk/dug/releases)
