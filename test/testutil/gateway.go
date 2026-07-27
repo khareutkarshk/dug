@@ -41,6 +41,12 @@ func NewGateway(t *testing.T, upstream string) *Gateway {
 					},
 					Remove: []string{"X-Internal"},
 				},
+				ResponseHeaders: config.HeaderRules{
+					Add: map[string]string{
+						"X-Powered-By": "DUG",
+					},
+					Remove: []string{"Server"},
+				},
 				Upstreams: []config.Upstream{
 					{
 						URL:    upstream,
