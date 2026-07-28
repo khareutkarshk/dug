@@ -32,7 +32,9 @@ func ws(w http.ResponseWriter, r *http.Request) {
 
 		log.Printf("received: %s\n", msg)
 
-		conn.WriteMessage(mt, msg)
+		if err := conn.WriteMessage(mt, msg); err != nil {
+			break
+		}
 	}
 }
 

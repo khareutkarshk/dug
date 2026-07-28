@@ -23,7 +23,7 @@ func TestRetry(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("success"))
+		_, _ = w.Write([]byte("success"))
 	})
 
 	gateway := testutil.NewGateway(

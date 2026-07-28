@@ -13,7 +13,7 @@ import (
 func TestReverseProxy(t *testing.T) {
 
 	backend := testutil.NewBackend(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("hello"))
+		_, _ = w.Write([]byte("hello"))
 	})
 
 	gateway := testutil.NewGateway(
