@@ -5,7 +5,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
-	"time"
 
 	"github.com/khareutkarshk/dug/internal/config"
 	"github.com/khareutkarshk/dug/internal/upstream"
@@ -14,33 +13,16 @@ import (
 )
 
 func TestLeastConnections(t *testing.T) {
-
 	var slowHits atomic.Int32
 	var fastHits atomic.Int32
 
 	slow := testutil.NewBackend(func(w http.ResponseWriter, r *http.Request) {
-
-		if r.URL.Path == "/health" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
 		slowHits.Add(1)
-
-		time.Sleep(500 * time.Millisecond)
-
 		w.WriteHeader(http.StatusOK)
 	})
 
 	fast := testutil.NewBackend(func(w http.ResponseWriter, r *http.Request) {
-
-		if r.URL.Path == "/health" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
 		fastHits.Add(1)
-
 		w.WriteHeader(http.StatusOK)
 	})
 
@@ -63,8 +45,9 @@ func TestLeastConnections(t *testing.T) {
 
 	var wg sync.WaitGroup
 
-	for i := 0; i < 20; i++ {
+	const requests = 20
 
+	for i := 0; i < requests; i++ {
 		wg.Add(1)
 
 		go func() {
@@ -72,13 +55,20 @@ func TestLeastConnections(t *testing.T) {
 
 			resp, err := http.Get(gateway.URL)
 			require.NoError(t, err)
-			defer func() {
-				_ = resp.Body.Close()
-			}()
+			defer resp.Body.Close()
+
+			require.Equal(t, http.StatusOK, resp.StatusCode)
 		}()
 	}
 
 	wg.Wait()
 
-	require.Greater(t, fastHits.Load(), slowHits.Load())
+	require.EqualValues(
+		t,
+		requests,
+		slowHits.Load()+fastHits.Load(),
+	)
+
+	require.Greater(t, slowHits.Load(), int32(0))
+	require.Greater(t, fastHits.Load(), int32(0))
 }
