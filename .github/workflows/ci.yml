@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Download Dependencies
+        run: go mod download
+
+      - name: Verify Formatting
+        run: test -z "$(gofmt -l .)"
+
+      - name: Run Tests
+        run: go test ./... -v
+
+      - name: Run Race Detector
+        run: go test ./... -race
+
+      - name: Run Coverage
+        run: go test ./... -cover
+
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: latest
+
+      - name: Run golangci-lint
+        run: golangci-lint run
