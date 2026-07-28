@@ -55,8 +55,9 @@ func TestLeastConnections(t *testing.T) {
 
 			resp, err := http.Get(gateway.URL)
 			require.NoError(t, err)
-			defer resp.Body.Close()
-
+			defer func() {
+				require.NoError(t, resp.Body.Close())
+			}()
 			require.Equal(t, http.StatusOK, resp.StatusCode)
 		}()
 	}
