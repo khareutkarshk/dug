@@ -31,7 +31,8 @@ func TestTimeout(t *testing.T) {
 
 	resp, err := http.Get(gateway.URL)
 	require.NoError(t, err)
-	defer resp.Body.Close()
-
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	require.Equal(t, http.StatusGatewayTimeout, resp.StatusCode)
 }

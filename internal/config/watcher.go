@@ -8,7 +8,6 @@ import (
 )
 
 func Watch(path string, onChange func()) error {
-
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err
@@ -21,7 +20,9 @@ func Watch(path string, onChange func()) error {
 	var debounce *time.Timer
 
 	go func() {
-		defer watcher.Close()
+		defer func() {
+			_ = watcher.Close()
+		}()
 
 		for {
 			select {
@@ -30,9 +31,9 @@ func Watch(path string, onChange func()) error {
 					return
 				}
 
-				if !(event.Has(fsnotify.Write) ||
-					event.Has(fsnotify.Create) ||
-					event.Has(fsnotify.Rename)) {
+				if !event.Has(fsnotify.Write) &&
+					!event.Has(fsnotify.Create) &&
+					!event.Has(fsnotify.Rename) {
 					continue
 				}
 
@@ -46,11 +47,12 @@ func Watch(path string, onChange func()) error {
 					log.Println("Config file changed, reloading...")
 					onChange()
 				})
+
 			case err := <-watcher.Errors:
 				log.Println("Error watching config file:", err)
 			}
-
 		}
 	}()
+
 	return nil
 }

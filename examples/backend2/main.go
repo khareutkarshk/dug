@@ -23,13 +23,14 @@ func hello(w http.ResponseWriter, r *http.Request) {
 		Service: "backend-service-2",
 	}
 
-	json.NewEncoder(w).Encode(response)
-
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func health(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	_, _ = w.Write([]byte("OK"))
 }
 
 func main() {
@@ -37,7 +38,7 @@ func main() {
 	http.HandleFunc("/health", health)
 	http.HandleFunc("/slow", func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(5 * time.Second)
-		fmt.Fprintln(w, os.Getenv("SERVICE_NAME"))
+		_, _ = fmt.Fprintln(w, os.Getenv("SERVICE_NAME"))
 	})
 
 	log.Println("Backend listening on :3002")

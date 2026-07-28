@@ -54,7 +54,9 @@ func TestPassiveHealthCheck(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		resp, err := http.Get(gateway.URL)
 		require.NoError(t, err)
-		resp.Body.Close()
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 	}
 
 	require.GreaterOrEqual(t, badHits.Load(), int32(3))

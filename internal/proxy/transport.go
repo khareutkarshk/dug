@@ -60,8 +60,9 @@ func (t *RetryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 				http.StatusServiceUnavailable,
 				http.StatusGatewayTimeout:
 
-				resp.Body.Close()
-
+				defer func() {
+					_ = resp.Body.Close()
+				}()
 			default:
 				return resp, nil
 			}

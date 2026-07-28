@@ -60,7 +60,9 @@ func TestCircuitBreakerRecovery(t *testing.T) {
 		t.Log("making recovery request")
 		resp, err := http.Get(gateway.URL)
 		require.NoError(t, err)
-		resp.Body.Close()
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 	}
 
 	// Wait for the circuit to become half-open.
@@ -74,7 +76,8 @@ func TestCircuitBreakerRecovery(t *testing.T) {
 
 	t.Log("status:", resp.StatusCode)
 
-	resp.Body.Close()
-
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	require.Equal(t, int32(4), hits.Load())
 }

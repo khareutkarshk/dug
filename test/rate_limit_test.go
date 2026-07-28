@@ -33,13 +33,16 @@ func TestRateLimitBurst(t *testing.T) {
 		resp, err := http.Get(gateway.URL)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, resp.StatusCode)
-		resp.Body.Close()
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 	}
 
 	resp, err := http.Get(gateway.URL)
 	require.NoError(t, err)
-	defer resp.Body.Close()
-
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	require.Equal(t, http.StatusTooManyRequests, resp.StatusCode)
 }
 
@@ -64,21 +67,25 @@ func TestRateLimitRefill(t *testing.T) {
 	resp, err := http.Get(gateway.URL)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	resp.Body.Close()
-
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	// Should now be limited.
 	resp, err = http.Get(gateway.URL)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusTooManyRequests, resp.StatusCode)
-	resp.Body.Close()
-
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	// Wait for one token to refill.
 	time.Sleep(1100 * time.Millisecond)
 
 	resp, err = http.Get(gateway.URL)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 }
 
 func TestRateLimitPerIP(t *testing.T) {
@@ -108,8 +115,9 @@ func TestRateLimitPerIP(t *testing.T) {
 	resp, err := client.Do(req)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	resp.Body.Close()
-
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	// Second request from the same IP -> rate limited
 	req, err = http.NewRequest(http.MethodGet, gateway.URL, nil)
 	require.NoError(t, err)
@@ -118,8 +126,9 @@ func TestRateLimitPerIP(t *testing.T) {
 	resp, err = client.Do(req)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusTooManyRequests, resp.StatusCode)
-	resp.Body.Close()
-
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	// Different IP should get its own limiter
 	req, err = http.NewRequest(http.MethodGet, gateway.URL, nil)
 	require.NoError(t, err)
@@ -128,7 +137,9 @@ func TestRateLimitPerIP(t *testing.T) {
 	resp, err = client.Do(req)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 }
 
 func TestRateLimitConcurrent(t *testing.T) {
@@ -161,8 +172,9 @@ func TestRateLimitConcurrent(t *testing.T) {
 
 			resp, err := http.Get(gateway.URL)
 			require.NoError(t, err)
-			defer resp.Body.Close()
-
+			defer func() {
+				_ = resp.Body.Close()
+			}()
 			switch resp.StatusCode {
 			case http.StatusOK:
 				atomic.AddInt64(&okCount, 1)
@@ -200,6 +212,8 @@ func TestRateLimitDisabled(t *testing.T) {
 		resp, err := http.Get(gateway.URL)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, resp.StatusCode)
-		resp.Body.Close()
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 	}
 }

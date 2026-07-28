@@ -30,8 +30,9 @@ func TestResponseHeaders(t *testing.T) {
 	)
 	resp, err := http.Get(gateway.URL)
 	require.NoError(t, err)
-	defer resp.Body.Close()
-
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	require.Equal(t, "DUG", resp.Header.Get("X-Powered-By"))
 	require.Empty(t, resp.Header.Get("Server"))
 

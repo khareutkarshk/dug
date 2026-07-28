@@ -56,7 +56,9 @@ func TestSmoothWeightedRoundRobin(t *testing.T) {
 	for i := 0; i < 40; i++ {
 		resp, err := http.Get(gateway.URL)
 		require.NoError(t, err)
-		resp.Body.Close()
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 	}
 
 	require.Equal(t, int32(30), backend1Hits.Load())

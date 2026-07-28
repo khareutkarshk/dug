@@ -70,7 +70,9 @@ func TestBackendRecovery(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		resp, err := http.Get(gateway.URL)
 		require.NoError(t, err)
-		resp.Body.Close()
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 	}
 
 	require.Equal(t, int32(10), healthy.Load())
@@ -89,7 +91,9 @@ func TestBackendRecovery(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		resp, err := http.Get(gateway.URL)
 		require.NoError(t, err)
-		resp.Body.Close()
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 	}
 
 	require.Greater(t, healthy.Load(), int32(0))
