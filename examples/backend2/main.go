@@ -37,7 +37,7 @@ func main() {
 	http.HandleFunc("/hello", hello)
 	http.HandleFunc("/health", health)
 	http.HandleFunc("/slow", func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(5 * time.Second)
+		time.Sleep(4 * time.Second)
 		_, _ = fmt.Fprintln(w, os.Getenv("SERVICE_NAME"))
 	})
 
