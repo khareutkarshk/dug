@@ -60,5 +60,8 @@ routes:
       max_age: 3600
 
     upstreams:
-      - url: http://localhost:3001
+      - url: http://backend1:3001
+        weight: 1
+
+      - url: http://backend2:3002
         weight: 1

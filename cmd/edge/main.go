@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -18,9 +19,17 @@ import (
 
 func main() {
 
+	configPath := flag.String(
+		"config",
+		"configs/edge.yaml",
+		"Path to configuration file",
+	)
+
+	flag.Parse()
+
 	metrics.Register()
 
-	cfg, err := config.Load("configs/edge.yaml")
+	cfg, err := config.Load(*configPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -35,7 +44,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = edge.EnableConfigReload("configs/edge.yaml")
+	err = edge.EnableConfigReload(*configPath)
 	if err != nil {
 		log.Fatal(err)
 	}
