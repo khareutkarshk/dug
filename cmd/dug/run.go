@@ -17,15 +17,17 @@ import (
 	"github.com/khareutkarshk/dug/internal/metrics"
 )
 
-func main() {
+func run(args []string) {
 
-	configPath := flag.String(
+	fs := flag.NewFlagSet("run", flag.ExitOnError)
+
+	configPath := fs.String(
 		"config",
 		"configs/edge.yaml",
 		"Path to configuration file",
 	)
 
-	flag.Parse()
+	fs.Parse(args)
 
 	metrics.Register()
 
@@ -44,8 +46,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = edge.EnableConfigReload(*configPath)
-	if err != nil {
+	if err := edge.EnableConfigReload(*configPath); err != nil {
 		log.Fatal(err)
 	}
 
@@ -74,6 +75,7 @@ func main() {
 		context.Background(),
 		5*time.Second,
 	)
+
 	defer cancel()
 
 	if err := edge.Server.Shutdown(ctx); err != nil {
