@@ -1,0 +1,65 @@
+services:
+  dug:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: dug
+
+    ports:
+      - "8080:8080"
+
+    depends_on:
+      - backend1
+      - backend2
+
+    restart: unless-stopped
+
+    networks:
+      - dug-network
+
+  backend1:
+    image: golang:1.25-alpine
+
+    container_name: backend1
+
+    working_dir: /app
+
+    volumes:
+      - .:/app
+
+    command: >
+      sh -c "go run ./examples/backend"
+
+    expose:
+      - "3001"
+
+    restart: unless-stopped
+
+    networks:
+      - dug-network
+
+  backend2:
+    image: golang:1.25-alpine
+
+    container_name: backend2
+
+    working_dir: /app
+
+    volumes:
+      - .:/app
+
+    command: >
+      sh -c "go run ./examples/backend2"
+
+    expose:
+      - "3002"
+
+    restart: unless-stopped
+
+    networks:
+      - dug-network
+
+networks:
+  dug-network:
+    driver: bridge
