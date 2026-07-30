@@ -28,6 +28,15 @@ func main() {
 			log.Fatal(err)
 		}
 
+	case "help":
+		cli.PrintHelp()
+
+	case "doctor":
+
+		if err := cli.Doctor(os.Args[2:]); err != nil {
+			log.Fatal(err)
+		}
+
 	default:
 		fmt.Printf("unknown command: %s\n", os.Args[1])
 		os.Exit(1)
