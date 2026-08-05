@@ -179,7 +179,7 @@ DUG ships as a multi-command CLI:
 |---|---|
 | `dug run` | Start the gateway |
 | `dug validate` | Validate a configuration file |
-| `dug doctor` | Check config, port availability, and upstream health |
+| `dug doctor` | Check config, port availability, TLS files, and upstreams |
 | `dug version` | Print build metadata |
 | `dug help` | Show usage |
 
@@ -189,14 +189,32 @@ dug run -config configs/edge.yaml
 
 # Validate config before deploy
 dug validate -config configs/edge.yaml
+dug validate -config configs/edge.yaml -quiet   # CI-friendly
+dug validate -config configs/edge.yaml -json    # machine-readable
 
-# Local diagnostics
+# Local diagnostics (non-zero exit if checks fail)
 dug doctor -config configs/edge.yaml
+dug doctor -config configs/edge.yaml -timeout 2s -json
 
 # Version (human, short, machine-readable)
 dug version
 dug version -short
 dug version -json
+```
+
+### Releases
+
+Tagged versions (`v*`) publish multi-platform binaries via GitHub Releases:
+
+- linux/amd64, linux/arm64
+- darwin/amd64, darwin/arm64
+- windows/amd64
+
+```bash
+# Example after a release is published
+curl -LO https://github.com/khareutkarshk/dug/releases/latest/download/dug_v0.1.0_linux_amd64.tar.gz
+tar -xzf dug_v0.1.0_linux_amd64.tar.gz
+./dug_v0.1.0_linux_amd64 version
 ```
 
 ---
@@ -332,8 +350,8 @@ The core gateway functionality is complete and stable. The next milestone focuse
 ### Distribution
 
 - [x] Docker Image
-- [ ] GitHub Releases
-- [ ] Pre-built binaries
+- [x] GitHub Releases (tag `v*` workflow)
+- [x] Pre-built binaries
 - [x] `go install` support
 
 ### Documentation

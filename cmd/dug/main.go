@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/khareutkarshk/dug/internal/cli"
@@ -22,19 +21,13 @@ func main() {
 		run(args)
 
 	case "version", "-v", "--version":
-		if err := cli.PrintVersion(args); err != nil {
-			log.Fatal(err)
-		}
+		exit(cli.PrintVersion(args))
 
 	case "validate":
-		if err := cli.Validate(args); err != nil {
-			log.Fatal(err)
-		}
+		exit(cli.Validate(args))
 
 	case "doctor":
-		if err := cli.Doctor(args); err != nil {
-			log.Fatal(err)
-		}
+		exit(cli.Doctor(args))
 
 	case "help", "-h", "--help":
 		cli.PrintHelp()
@@ -44,4 +37,14 @@ func main() {
 		cli.PrintHelp()
 		os.Exit(1)
 	}
+}
+
+func exit(err error) {
+	if err == nil {
+		return
+	}
+	if !cli.IsReported(err) {
+		fmt.Fprintln(os.Stderr, err)
+	}
+	os.Exit(1)
 }

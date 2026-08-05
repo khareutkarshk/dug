@@ -22,8 +22,16 @@ Global flags:
 Run options:
   -config string   Path to configuration file (default "configs/edge.yaml")
 
-Validate / doctor options:
+Validate options:
   -config string   Path to configuration file (default "configs/edge.yaml")
+  -quiet           Suppress success output (still prints errors)
+  -json            Print validation report as JSON
+
+Doctor options:
+  -config string   Path to configuration file (default "configs/edge.yaml")
+  -timeout duration
+                   Per-upstream probe timeout (default 3s)
+  -json            Print diagnostics as JSON
 
 Version options:
   -short           Print version number only
@@ -32,7 +40,9 @@ Version options:
 Examples:
   dug run -config configs/edge.yaml
   dug validate -config configs/edge.yaml
+  dug validate -config configs/edge.yaml -json
   dug doctor -config configs/edge.yaml
+  dug doctor -config configs/edge.yaml -timeout 2s -json
   dug version
   dug version -short
   dug version -json
