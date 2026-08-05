@@ -3,22 +3,40 @@ package cli
 import "fmt"
 
 func PrintHelp() {
-	fmt.Println("DUG - Distributed Unified Gateway")
-	fmt.Println()
+	fmt.Println(`DUG - Distributed Unified Gateway
 
-	fmt.Println("Usage:")
-	fmt.Println("  dug <command> [options]")
-	fmt.Println()
+Usage:
+  dug <command> [options]
 
-	fmt.Println("Commands:")
-	fmt.Println("  run        Start the gateway")
-	fmt.Println("  validate   Validate configuration")
-	fmt.Println("  version    Print version information")
-	fmt.Println("  help       Show this help message")
-	fmt.Println()
+Commands:
+  run         Start the gateway
+  validate    Validate a configuration file
+  doctor      Run local diagnostics against a config
+  version     Print version information
+  help        Show this help message
 
-	fmt.Println("Examples:")
-	fmt.Println("  dug run -config configs/edge.yaml")
-	fmt.Println("  dug validate -config configs/edge.yaml")
-	fmt.Println("  dug version")
+Global flags:
+  -h, --help       Show help
+  -v, --version    Print version information
+
+Run options:
+  -config string   Path to configuration file (default "configs/edge.yaml")
+
+Validate / doctor options:
+  -config string   Path to configuration file (default "configs/edge.yaml")
+
+Version options:
+  -short           Print version number only
+  -json            Print version information as JSON
+
+Examples:
+  dug run -config configs/edge.yaml
+  dug validate -config configs/edge.yaml
+  dug doctor -config configs/edge.yaml
+  dug version
+  dug version -short
+  dug version -json
+
+Install:
+  go install github.com/khareutkarshk/dug/cmd/dug@latest`)
 }

@@ -9,36 +9,39 @@ import (
 )
 
 func main() {
-
 	if len(os.Args) < 2 {
-		run(os.Args[1:])
+		run(nil)
 		return
 	}
 
-	switch os.Args[1] {
+	cmd := os.Args[1]
+	args := os.Args[2:]
 
+	switch cmd {
 	case "run":
-		run(os.Args[2:])
+		run(args)
 
-	case "version":
-		cli.PrintVersion()
+	case "version", "-v", "--version":
+		if err := cli.PrintVersion(args); err != nil {
+			log.Fatal(err)
+		}
 
 	case "validate":
-		if err := cli.Validate(os.Args[2:]); err != nil {
+		if err := cli.Validate(args); err != nil {
 			log.Fatal(err)
 		}
-
-	case "help":
-		cli.PrintHelp()
 
 	case "doctor":
-
-		if err := cli.Doctor(os.Args[2:]); err != nil {
+		if err := cli.Doctor(args); err != nil {
 			log.Fatal(err)
 		}
 
+	case "help", "-h", "--help":
+		cli.PrintHelp()
+
 	default:
-		fmt.Printf("unknown command: %s\n", os.Args[1])
+		fmt.Fprintf(os.Stderr, "unknown command: %s\n\n", cmd)
+		cli.PrintHelp()
 		os.Exit(1)
 	}
 }

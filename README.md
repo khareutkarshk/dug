@@ -114,24 +114,40 @@ Rather than wrapping existing gateway libraries, DUG focuses on building the net
 
 # 🚀 Getting Started
 
-## Clone the repository
+## Install
+
+### Option 1 — `go install` (recommended)
+
+```bash
+go install github.com/khareutkarshk/dug/cmd/dug@latest
+```
+
+Ensure `$(go env GOPATH)/bin` is on your `PATH`, then verify:
+
+```bash
+dug version
+```
+
+### Option 2 — Build from source
 
 ```bash
 git clone https://github.com/khareutkarshk/dug.git
-
 cd dug
+go mod tidy
+make build
+./dug version
 ```
 
-## Install dependencies
+### Option 3 — Docker
 
 ```bash
-go mod tidy
+docker compose up --build
 ```
 
 ## Generate local TLS certificates
 
 ```bash
-mkdir certs
+mkdir -p certs
 
 openssl req -x509 \
 -newkey rsa:4096 \
@@ -144,7 +160,43 @@ openssl req -x509 \
 ## Start the gateway
 
 ```bash
-go run ./cmd/edge
+dug run -config configs/edge.yaml
+```
+
+Or from source without installing:
+
+```bash
+go run ./cmd/dug run -config configs/edge.yaml
+```
+
+---
+
+# 🧰 CLI
+
+DUG ships as a multi-command CLI:
+
+| Command | Description |
+|---|---|
+| `dug run` | Start the gateway |
+| `dug validate` | Validate a configuration file |
+| `dug doctor` | Check config, port availability, and upstream health |
+| `dug version` | Print build metadata |
+| `dug help` | Show usage |
+
+```bash
+# Start gateway
+dug run -config configs/edge.yaml
+
+# Validate config before deploy
+dug validate -config configs/edge.yaml
+
+# Local diagnostics
+dug doctor -config configs/edge.yaml
+
+# Version (human, short, machine-readable)
+dug version
+dug version -short
+dug version -json
 ```
 
 ---
@@ -193,7 +245,7 @@ configs/edge.yaml
 ```text
 .
 ├── cmd/
-│   └── edge/
+│   └── dug/          # CLI entrypoint (run, validate, doctor, version)
 ├── configs/
 ├── examples/
 │   ├── backend/
@@ -201,6 +253,7 @@ configs/edge.yaml
 │   └── websocket/
 ├── internal/
 │   ├── app/
+│   ├── cli/          # CLI command implementations
 │   ├── config/
 │   ├── discovery/
 │   ├── httpx/
@@ -211,7 +264,8 @@ configs/edge.yaml
 │   ├── ratelimit/
 │   ├── router/
 │   ├── server/
-│   └── upstream/
+│   ├── upstream/
+│   └── version/      # Build-time version metadata
 ├── test/
 └── README.md
 ```
@@ -270,29 +324,30 @@ The core gateway functionality is complete and stable. The next milestone focuse
 
 ### CLI
 
-- [ ] `dug run`
-- [ ] `dug validate`
-- [ ] `dug version`
+- [x] `dug run`
+- [x] `dug validate`
+- [x] `dug doctor`
+- [x] `dug version` (`-short`, `-json`)
 
 ### Distribution
 
-- [ ] Docker Image
+- [x] Docker Image
 - [ ] GitHub Releases
 - [ ] Pre-built binaries
-- [ ] `go install` support
+- [x] `go install` support
 
 ### Documentation
 
-- [ ] Installation Guide
+- [x] Installation Guide
 - [ ] Configuration Reference
 - [ ] Feature Documentation
 - [ ] Example Configurations
 
 ### CI/CD
 
-- [ ] GitHub Actions
-- [ ] Go Race Tests
-- [ ] golangci-lint
+- [x] GitHub Actions
+- [x] Go Race Tests
+- [x] golangci-lint
 - [ ] Automated Releases
 
 ---

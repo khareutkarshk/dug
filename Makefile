@@ -1,8 +1,8 @@
 BINARY := dug
-CMD := ./cmd/edge
+CMD := ./cmd/dug
 
 VERSION ?= dev
-COMMIT := $(shell git rev-parse --short HEAD)
+COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 GO_VERSION := $(shell go version | awk '{print $$3}')
 
@@ -15,23 +15,29 @@ LDFLAGS := \
 .PHONY: help
 help:
 	@echo "Available commands:"
-	@echo "  make run        - Run gateway"
-	@echo "  make build      - Build binary"
-	@echo "  make release    - Build release binary"
+	@echo "  make run        - Run gateway (dug run)"
+	@echo "  make build      - Build binary with version metadata"
+	@echo "  make install    - Install dug to GOPATH/bin"
+	@echo "  make release    - Build stripped release binary"
 	@echo "  make test       - Run tests"
 	@echo "  make race       - Run race detector"
 	@echo "  make lint       - Run golangci-lint"
 	@echo "  make fmt        - Format source"
 	@echo "  make tidy       - Tidy dependencies"
 	@echo "  make clean      - Remove binaries"
+	@echo "  make version    - Print embedded version via dug version"
 
 .PHONY: run
 run:
-	go run $(CMD)
+	go run $(CMD) run
 
 .PHONY: build
 build:
-	go build -o $(BINARY) $(CMD)
+	go build -ldflags "$(LDFLAGS)" -o $(BINARY) $(CMD)
+
+.PHONY: install
+install:
+	go install -ldflags "$(LDFLAGS)" $(CMD)
 
 .PHONY: release
 release:
@@ -39,6 +45,10 @@ release:
 		-ldflags "$(LDFLAGS) -s -w" \
 		-o $(BINARY) \
 		$(CMD)
+
+.PHONY: version
+version: build
+	./$(BINARY) version
 
 .PHONY: fmt
 fmt:

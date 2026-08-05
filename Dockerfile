@@ -5,24 +5,25 @@ FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
-# Install certificates and git
 RUN apk add --no-cache git ca-certificates
 
-# Copy dependency files
 COPY go.mod go.sum ./
-
-# Download dependencies
 RUN go mod download
 
-# Copy source code
 COPY . .
 
-# Build DUG
+ARG VERSION=dev
+ARG COMMIT=unknown
+ARG DATE=unknown
+
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build \
-    -ldflags="-s -w" \
+    -ldflags="-s -w \
+      -X github.com/khareutkarshk/dug/internal/version.Version=${VERSION} \
+      -X github.com/khareutkarshk/dug/internal/version.Commit=${COMMIT} \
+      -X github.com/khareutkarshk/dug/internal/version.Date=${DATE}" \
     -o dug \
-    ./cmd/edge
+    ./cmd/dug
 
 
 # ============================
@@ -34,12 +35,9 @@ WORKDIR /app
 
 RUN apk add --no-cache ca-certificates
 
-# Copy binary
 COPY --from=builder /app/dug .
-
-# Copy docker configuration
 COPY configs/docker.yaml ./configs/docker.yaml
 
 EXPOSE 8080
 
-CMD ["./dug", "-config", "configs/docker.yaml"]
+CMD ["./dug", "run", "-config", "configs/docker.yaml"]
