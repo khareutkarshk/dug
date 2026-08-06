@@ -1,0 +1,53 @@
+services:
+  dug:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    container_name: dug-nextjs-api
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./edge.docker.yaml:/app/configs/edge.yaml:ro
+    command: ["./dug", "run", "-config", "configs/edge.yaml"]
+    depends_on:
+      - api1
+      - api2
+    restart: unless-stopped
+
+  api1:
+    image: golang:1.25-alpine
+    working_dir: /app
+    volumes:
+      - ../..:/app
+    environment:
+      PORT: "3001"
+      SERVICE_NAME: catalog-api
+      VERSION: "a"
+    command: ["go", "run", "./examples/echo"]
+    restart: unless-stopped
+
+  api2:
+    image: golang:1.25-alpine
+    working_dir: /app
+    volumes:
+      - ../..:/app
+    environment:
+      PORT: "3002"
+      SERVICE_NAME: catalog-api
+      VERSION: "b"
+    command: ["go", "run", "./examples/echo"]
+    restart: unless-stopped
+
+  frontend:
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    environment:
+      NEXT_PUBLIC_API_BASE: http://localhost:8080
+    command: ["sh", "-c", "npm install && npm run dev -- -H 0.0.0.0 -p 3000"]
+    ports:
+      - "3000:3000"
+    depends_on:
+      - dug
+    restart: unless-stopped

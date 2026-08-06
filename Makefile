@@ -21,6 +21,7 @@ help:
 	@echo "  make release    - Build stripped release binary"
 	@echo "  make test       - Run tests"
 	@echo "  make race       - Run race detector"
+	@echo "  make benchmark  - Run gateway load benchmarks (writes benchmarks/results.md)"
 	@echo "  make lint       - Run golangci-lint"
 	@echo "  make fmt        - Format source"
 	@echo "  make tidy       - Tidy dependencies"
@@ -61,6 +62,14 @@ test:
 .PHONY: race
 race:
 	go test -race ./...
+
+.PHONY: benchmark
+benchmark:
+	go test -tags=benchmark ./benchmarks \
+		-run '^TestGatewayBenchmarks$$' \
+		-count=1 \
+		-timeout 30m \
+		-v
 
 .PHONY: tidy
 tidy:

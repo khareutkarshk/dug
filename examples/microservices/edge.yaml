@@ -1,0 +1,40 @@
+server:
+  port: 8080
+  retries: 0
+  rate_limit:
+    rps: 1000
+    burst: 1000
+  read_timeout: 10s
+  write_timeout: 10s
+  idle_timeout: 120s
+
+routes:
+  - path: /users/
+    timeout: 5s
+    strategy: smooth_weighted
+    response_headers:
+      add:
+        X-Route: users
+    upstreams:
+      - url: http://users:3001
+        weight: 1
+
+  - path: /orders/
+    timeout: 5s
+    strategy: smooth_weighted
+    response_headers:
+      add:
+        X-Route: orders
+    upstreams:
+      - url: http://orders:3002
+        weight: 1
+
+  - path: /payments/
+    timeout: 5s
+    strategy: smooth_weighted
+    response_headers:
+      add:
+        X-Route: payments
+    upstreams:
+      - url: http://payments:3003
+        weight: 1

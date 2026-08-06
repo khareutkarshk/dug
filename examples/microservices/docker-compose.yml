@@ -1,0 +1,52 @@
+services:
+  dug:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    container_name: dug-microservices
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./edge.yaml:/app/configs/edge.yaml:ro
+    command: ["./dug", "run", "-config", "configs/edge.yaml"]
+    depends_on:
+      - users
+      - orders
+      - payments
+    restart: unless-stopped
+
+  users:
+    image: golang:1.25-alpine
+    working_dir: /app
+    volumes:
+      - ../..:/app
+    environment:
+      PORT: "3001"
+      SERVICE_NAME: users
+      VERSION: "v1"
+    command: ["go", "run", "./examples/echo"]
+    restart: unless-stopped
+
+  orders:
+    image: golang:1.25-alpine
+    working_dir: /app
+    volumes:
+      - ../..:/app
+    environment:
+      PORT: "3002"
+      SERVICE_NAME: orders
+      VERSION: "v1"
+    command: ["go", "run", "./examples/echo"]
+    restart: unless-stopped
+
+  payments:
+    image: golang:1.25-alpine
+    working_dir: /app
+    volumes:
+      - ../..:/app
+    environment:
+      PORT: "3003"
+      SERVICE_NAME: payments
+      VERSION: "v1"
+    command: ["go", "run", "./examples/echo"]
+    restart: unless-stopped

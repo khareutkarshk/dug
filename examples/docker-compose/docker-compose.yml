@@ -1,0 +1,37 @@
+services:
+  dug:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    container_name: dug-lb
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./edge.yaml:/app/configs/edge.yaml:ro
+    command: ["./dug", "run", "-config", "configs/edge.yaml"]
+    depends_on:
+      - backend1
+      - backend2
+    restart: unless-stopped
+
+  backend1:
+    image: golang:1.25-alpine
+    container_name: dug-backend1
+    working_dir: /app
+    volumes:
+      - ../..:/app
+    command: ["go", "run", "./examples/backend"]
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
+
+  backend2:
+    image: golang:1.25-alpine
+    container_name: dug-backend2
+    working_dir: /app
+    volumes:
+      - ../..:/app
+    command: ["go", "run", "./examples/backend2"]
+    ports:
+      - "3002:3002"
+    restart: unless-stopped

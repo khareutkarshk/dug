@@ -1,0 +1,37 @@
+services:
+  dug:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    container_name: dug-ai-gateway
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./edge.yaml:/app/configs/edge.yaml:ro
+    command: ["./dug", "run", "-config", "configs/edge.yaml"]
+    depends_on:
+      - openai-mock
+      - ollama-mock
+    restart: unless-stopped
+
+  openai-mock:
+    image: golang:1.25-alpine
+    working_dir: /app
+    volumes:
+      - ../..:/app
+    environment:
+      PORT: "3001"
+      SERVICE_NAME: openai-mock
+    command: ["go", "run", "./examples/echo"]
+    restart: unless-stopped
+
+  ollama-mock:
+    image: golang:1.25-alpine
+    working_dir: /app
+    volumes:
+      - ../..:/app
+    environment:
+      PORT: "3002"
+      SERVICE_NAME: ollama-mock
+    command: ["go", "run", "./examples/echo"]
+    restart: unless-stopped

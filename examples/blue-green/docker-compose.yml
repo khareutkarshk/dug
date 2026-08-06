@@ -1,0 +1,39 @@
+services:
+  dug:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    container_name: dug-blue-green
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./edge.yaml:/app/configs/edge.yaml:ro
+    command: ["./dug", "run", "-config", "configs/edge.yaml"]
+    depends_on:
+      - blue
+      - green
+    restart: unless-stopped
+
+  blue:
+    image: golang:1.25-alpine
+    working_dir: /app
+    volumes:
+      - ../..:/app
+    environment:
+      PORT: "3001"
+      SERVICE_NAME: shop-api
+      VERSION: "blue-v1"
+    command: ["go", "run", "./examples/echo"]
+    restart: unless-stopped
+
+  green:
+    image: golang:1.25-alpine
+    working_dir: /app
+    volumes:
+      - ../..:/app
+    environment:
+      PORT: "3002"
+      SERVICE_NAME: shop-api
+      VERSION: "green-v2"
+    command: ["go", "run", "./examples/echo"]
+    restart: unless-stopped

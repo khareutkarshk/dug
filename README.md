@@ -289,15 +289,24 @@ configs/edge.yaml
 ```text
 .
 ├── cmd/
-│   └── dug/          # CLI entrypoint (run, validate, doctor, version)
+│   └── dug/          # CLI entrypoint (run, validate, doctor, version, init)
 ├── configs/
 ├── examples/
-│   ├── backend/
-│   ├── backend2/
+│   ├── README.md             # Example catalog
+│   ├── backend/              # Legacy demo upstream :3001
+│   ├── backend2/             # Legacy demo upstream :3002
+│   ├── echo/                 # Shared configurable mock upstream
+│   ├── basic-reverse-proxy/
+│   ├── docker-compose/
+│   ├── microservices/
+│   ├── nextjs-api/
+│   ├── ai-gateway/
+│   ├── blue-green/
 │   └── websocket/
+├── benchmarks/
 ├── internal/
 │   ├── app/
-│   ├── cli/          # CLI command implementations
+│   ├── cli/
 │   ├── config/
 │   ├── discovery/
 │   ├── httpx/
@@ -309,10 +318,12 @@ configs/edge.yaml
 │   ├── router/
 │   ├── server/
 │   ├── upstream/
-│   └── version/      # Build-time version metadata
+│   └── version/
 ├── test/
 └── README.md
 ```
+
+See [examples/README.md](examples/README.md) for runnable demos (load balancing, path routing, Next.js, AI gateway, blue/green).
 
 ---
 

@@ -1,0 +1,20 @@
+server:
+  port: 8080
+  retries: 0
+  rate_limit:
+    rps: 1000
+    burst: 1000
+  read_timeout: 10s
+  write_timeout: 10s
+  idle_timeout: 120s
+
+routes:
+  - path: /
+    timeout: 5s
+    strategy: smooth_weighted
+    response_headers:
+      add:
+        X-Powered-By: DUG
+    upstreams:
+      - url: http://localhost:3001
+        weight: 1

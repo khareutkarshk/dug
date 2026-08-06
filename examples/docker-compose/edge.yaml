@@ -1,0 +1,30 @@
+server:
+  port: 8080
+  retries: 1
+  rate_limit:
+    rps: 1000
+    burst: 1000
+  read_timeout: 10s
+  write_timeout: 10s
+  idle_timeout: 120s
+
+routes:
+  - path: /
+    timeout: 5s
+    strategy: least_connections
+    request_headers:
+      add:
+        X-Gateway: DUG
+    response_headers:
+      add:
+        X-Powered-By: DUG
+    cors:
+      enabled: true
+      allow_origins: ["*"]
+      allow_methods: ["GET", "POST", "OPTIONS"]
+      allow_headers: ["Authorization", "Content-Type"]
+    upstreams:
+      - url: http://backend1:3001
+        weight: 1
+      - url: http://backend2:3002
+        weight: 1
