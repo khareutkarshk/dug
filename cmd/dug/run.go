@@ -27,7 +27,8 @@ func run(args []string) {
 		"Path to configuration file",
 	)
 
-	fs.Parse(args)
+	// ExitOnError: invalid flags terminate the process.
+	_ = fs.Parse(args)
 
 	metrics.Register()
 

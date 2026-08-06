@@ -56,10 +56,16 @@ func validate(stdout, stderr io.Writer, args []string) error {
 		absPath = *configPath
 	}
 
+	out := newPrinter(stdout)
+	errOut := newPrinter(stderr)
+
 	cfg, err := config.Load(*configPath)
 	if err != nil {
 		err = fmt.Errorf("load config %s: %w", *configPath, err)
-		fmt.Fprintf(stderr, "✗ %v\n", err)
+		errOut.printf("✗ %v\n", err)
+		if errOut.err != nil {
+			return reported(errOut.err)
+		}
 		return reported(err)
 	}
 
@@ -91,10 +97,13 @@ func validate(stdout, stderr io.Writer, args []string) error {
 	}
 
 	if !result.Ok() {
-		fmt.Fprintln(stderr, "✗ Configuration is invalid")
-		fmt.Fprintln(stderr)
+		errOut.println("✗ Configuration is invalid")
+		errOut.println()
 		for _, issue := range result.Issues {
-			fmt.Fprintf(stderr, "  - %s\n", issue.String())
+			errOut.printf("  - %s\n", issue.String())
+		}
+		if errOut.err != nil {
+			return reported(errOut.err)
 		}
 		return reported(result.Error())
 	}
@@ -103,21 +112,20 @@ func validate(stdout, stderr io.Writer, args []string) error {
 		return nil
 	}
 
-	fmt.Fprintln(stdout, "✓ Configuration is valid")
-	fmt.Fprintln(stdout)
-	fmt.Fprintf(stdout, "Config : %s\n", absPath)
-	fmt.Fprintf(stdout, "Port   : %d\n", cfg.Server.Port)
-	fmt.Fprintf(stdout, "TLS    : %t\n", cfg.Server.TLS.Enabled)
-	fmt.Fprintf(stdout, "Routes : %d\n", len(cfg.Routes))
-	fmt.Fprintln(stdout)
+	out.println("✓ Configuration is valid")
+	out.println()
+	out.printf("Config : %s\n", absPath)
+	out.printf("Port   : %d\n", cfg.Server.Port)
+	out.printf("TLS    : %t\n", cfg.Server.TLS.Enabled)
+	out.printf("Routes : %d\n", len(cfg.Routes))
+	out.println()
 
 	for i, route := range cfg.Routes {
 		strategy := route.Strategy
 		if strategy == "" {
 			strategy = "smooth_weighted (default)"
 		}
-		fmt.Fprintf(
-			stdout,
+		out.printf(
 			"  [%d] %s  strategy=%s  upstreams=%d\n",
 			i,
 			route.Path,
@@ -126,5 +134,8 @@ func validate(stdout, stderr io.Writer, args []string) error {
 		)
 	}
 
+	if out.err != nil {
+		return reported(out.err)
+	}
 	return nil
 }

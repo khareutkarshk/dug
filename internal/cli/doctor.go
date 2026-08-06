@@ -136,8 +136,8 @@ func finishDoctor(stdout, stderr io.Writer, report *DoctorReport, start time.Tim
 		if err := enc.Encode(report); err != nil {
 			return err
 		}
-	} else {
-		printDoctor(stdout, report)
+	} else if err := printDoctor(stdout, report); err != nil {
+		return err
 	}
 
 	if report.Failed > 0 {
@@ -146,20 +146,22 @@ func finishDoctor(stdout, stderr io.Writer, report *DoctorReport, start time.Tim
 	return nil
 }
 
-func printDoctor(w io.Writer, report *DoctorReport) {
-	fmt.Fprintln(w, "Running DUG diagnostics...")
-	fmt.Fprintln(w)
-	fmt.Fprintf(w, "Config: %s\n", report.Config)
-	fmt.Fprintln(w)
+func printDoctor(w io.Writer, report *DoctorReport) error {
+	out := newPrinter(w)
+
+	out.println("Running DUG diagnostics...")
+	out.println()
+	out.printf("Config: %s\n", report.Config)
+	out.println()
 
 	currentSection := ""
 	for _, check := range report.Checks {
 		section := strings.SplitN(check.Name, ".", 2)[0]
 		if section != currentSection {
 			if currentSection != "" {
-				fmt.Fprintln(w)
+				out.println()
 			}
-			fmt.Fprintln(w, titleCase(section))
+			out.println(titleCase(section))
 			currentSection = section
 		}
 
@@ -170,18 +172,18 @@ func printDoctor(w io.Writer, report *DoctorReport) {
 		case statusFail:
 			mark = "✗"
 		}
-		fmt.Fprintf(w, "  %s %s\n", mark, check.Message)
+		out.printf("  %s %s\n", mark, check.Message)
 	}
 
-	fmt.Fprintln(w)
-	fmt.Fprintf(
-		w,
+	out.println()
+	out.printf(
 		"Summary: %d passed, %d warned, %d failed (%s)\n",
 		report.Passed,
 		report.Warned,
 		report.Failed,
 		report.Elapsed,
 	)
+	return out.err
 }
 
 func titleCase(s string) string {
@@ -266,7 +268,7 @@ func probeUpstream(report *DoctorReport, client *http.Client, rawURL string) {
 		)
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusOK {
 		report.add("upstream.health", statusPass, fmt.Sprintf("%s: healthy", healthURL.String()))

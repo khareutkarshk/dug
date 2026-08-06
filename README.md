@@ -186,6 +186,7 @@ DUG ships as a multi-command CLI:
 
 | Command | Description |
 |---|---|
+| `dug init` | Bootstrap a new DUG project |
 | `dug run` | Start the gateway |
 | `dug validate` | Validate a configuration file |
 | `dug doctor` | Check config, port availability, TLS files, and upstreams |
@@ -193,6 +194,11 @@ DUG ships as a multi-command CLI:
 | `dug help` | Show usage |
 
 ```bash
+# Bootstrap a project
+dug init my-gateway
+cd my-gateway
+dug run -config configs/edge.yaml
+
 # Start gateway
 dug run -config configs/edge.yaml
 
@@ -362,6 +368,7 @@ The core gateway functionality is complete and stable. The next milestone focuse
 
 ### CLI
 
+- [x] `dug init`
 - [x] `dug run`
 - [x] `dug validate`
 - [x] `dug doctor`

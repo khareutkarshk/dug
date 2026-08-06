@@ -1,0 +1,22 @@
+services:
+  dug:
+    image: "{{.Image}}"
+    container_name: "{{.Name}}"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./configs:/app/configs:ro
+      - ./certs:/app/certs:ro
+    command: ["./dug", "run", "-config", "configs/edge.yaml"]
+    extra_hosts:
+      - "localhost:host-gateway"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    image: traefik/whoami:v1.11.0
+    container_name: "{{.Name}}-backend"
+    ports:
+      - "3001:80"
+    restart: unless-stopped

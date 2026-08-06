@@ -52,10 +52,6 @@ func (r *ValidationResult) add(field, message string) {
 	})
 }
 
-func validateConfig(cfg *config.Config) error {
-	return checkConfig(cfg).Error()
-}
-
 func checkConfig(cfg *config.Config) *ValidationResult {
 	result := &ValidationResult{}
 

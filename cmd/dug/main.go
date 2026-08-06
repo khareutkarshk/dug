@@ -20,6 +20,9 @@ func main() {
 	case "run":
 		run(args)
 
+	case "init":
+		exit(cli.Init(args))
+
 	case "version", "-v", "--version":
 		exit(cli.PrintVersion(args))
 
@@ -33,7 +36,7 @@ func main() {
 		cli.PrintHelp()
 
 	default:
-		fmt.Fprintf(os.Stderr, "unknown command: %s\n\n", cmd)
+		_, _ = fmt.Fprintf(os.Stderr, "unknown command: %s\n\n", cmd)
 		cli.PrintHelp()
 		os.Exit(1)
 	}
@@ -44,7 +47,7 @@ func exit(err error) {
 		return
 	}
 	if !cli.IsReported(err) {
-		fmt.Fprintln(os.Stderr, err)
+		_, _ = fmt.Fprintln(os.Stderr, err)
 	}
 	os.Exit(1)
 }

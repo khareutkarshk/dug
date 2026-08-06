@@ -1,14 +1,18 @@
 package cli
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 func PrintHelp() {
-	fmt.Println(`DUG - Distributed Unified Gateway
+	_, _ = fmt.Fprintln(os.Stdout, `DUG - Distributed Unified Gateway
 
 Usage:
   dug <command> [options]
 
 Commands:
+  init        Bootstrap a new DUG project
   run         Start the gateway
   validate    Validate a configuration file
   doctor      Run local diagnostics against a config
@@ -18,6 +22,10 @@ Commands:
 Global flags:
   -h, --help       Show help
   -v, --version    Print version information
+
+Init options:
+  dug init <directory>
+  --force          Overwrite existing files
 
 Run options:
   -config string   Path to configuration file (default "configs/edge.yaml")
@@ -38,6 +46,7 @@ Version options:
   -json            Print version information as JSON
 
 Examples:
+  dug init my-gateway
   dug run -config configs/edge.yaml
   dug validate -config configs/edge.yaml
   dug validate -config configs/edge.yaml -json
