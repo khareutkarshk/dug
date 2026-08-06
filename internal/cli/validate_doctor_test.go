@@ -57,6 +57,76 @@ func TestCheckConfigCollectsIssues(t *testing.T) {
 	}
 }
 
+func TestCheckConfigV1Features(t *testing.T) {
+	cfg := &config.Config{
+		Server: config.ServerConfig{
+			Port: 8080,
+			Limits: config.LimitsConfig{
+				BodySize: -1,
+			},
+			Compression: config.CompressionConfig{
+				Enabled: true,
+				MinSize: -5,
+			},
+			Security: config.SecurityConfig{
+				Headers: config.SecurityHeaders{
+					XFrameOptions:           "ALLOWALL",
+					XContentTypeOptions:     "invalid",
+					StrictTransportSecurity: "includeSubDomains",
+					ReferrerPolicy:          "not-a-policy",
+				},
+			},
+			TLS: config.TLSConfig{
+				Enabled: true,
+			},
+		},
+		Routes: []config.Route{
+			{
+				Path:    "/api",
+				Timeout: -1,
+				RequestHeaders: config.HeaderRules{
+					Add:    map[string]string{"X-A": "1"},
+					Remove: []string{"X-A", "X-B", "x-b"},
+				},
+				Upstreams: []config.Upstream{
+					{URL: "http://localhost:3001", Weight: 0},
+					{URL: "http://localhost:3001/", Weight: 2},
+				},
+			},
+			{
+				Path:      "/api",
+				Upstreams: []config.Upstream{{URL: "http://localhost:3002", Weight: 1}},
+			},
+		},
+	}
+
+	result := checkConfig(cfg)
+	if result.Ok() {
+		t.Fatal("expected validation issues")
+	}
+
+	joined := result.Error().Error()
+	for _, want := range []string{
+		"server.limits.body_size",
+		"server.compression.min_size",
+		"server.security.headers.x_frame_options",
+		"server.security.headers.x_content_type_options",
+		"server.security.headers.strict_transport_security",
+		"server.security.headers.referrer_policy",
+		"server.tls.cert_file",
+		"server.tls.key_file",
+		"routes[0].timeout",
+		"routes[0].upstreams[0].weight",
+		"routes[0].upstreams[1].url",
+		"routes[1].path",
+		"routes[0].request_headers",
+	} {
+		if !strings.Contains(joined, want) {
+			t.Fatalf("missing issue for %s in:\n%s", want, joined)
+		}
+	}
+}
+
 func TestValidateCommandJSON(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "ok.yaml")

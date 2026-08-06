@@ -47,6 +47,14 @@ func NewGateway(
 				RPS:   options.RateLimitRPS,
 				Burst: options.RateLimitBurst,
 			},
+
+			Limits: config.LimitsConfig{
+				BodySize: options.BodySize,
+			},
+			Compression: options.Compression,
+			Security: config.SecurityConfig{
+				Headers: options.SecurityHeaders,
+			},
 		},
 
 		Routes: []config.Route{

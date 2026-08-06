@@ -55,6 +55,9 @@ Rather than wrapping existing gateway libraries, DUG focuses on building the net
 - ✅ CORS
 - ✅ Request Header Manipulation
 - ✅ Response Header Manipulation
+- ✅ Security Headers
+- ✅ Request Body Size Limit
+- ✅ Gzip Response Compression
 
 ---
 
@@ -413,7 +416,6 @@ The core gateway functionality is complete and stable. The next milestone focuse
 - JWT Authentication
 - API Keys
 - OpenTelemetry
-- Response Compression
 - Response Caching
 - HTTP/2
 - HTTP/3

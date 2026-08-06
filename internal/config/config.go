@@ -36,6 +36,10 @@ type ServerConfig struct {
 
 	TLS TLSConfig `yaml:"tls"`
 
+	Compression CompressionConfig `yaml:"compression"`
+	Limits      LimitsConfig      `yaml:"limits"`
+	Security    SecurityConfig    `yaml:"security"`
+
 	ReadTimeout  time.Duration `yaml:"read_timeout"`
 	WriteTimeout time.Duration `yaml:"write_timeout"`
 	IdleTimeout  time.Duration `yaml:"idle_timeout"`
@@ -44,6 +48,34 @@ type ServerConfig struct {
 type RateLimitConfig struct {
 	RPS   float64 `yaml:"rps"`
 	Burst int     `yaml:"burst"`
+}
+
+// CompressionConfig controls optional gzip response compression.
+// Disabled by default for backward compatibility.
+type CompressionConfig struct {
+	Enabled bool `yaml:"enabled"`
+	// MinSize is the minimum response body size in bytes before compression.
+	MinSize int `yaml:"min_size"`
+}
+
+// LimitsConfig holds request limits. Zero body_size means unlimited.
+type LimitsConfig struct {
+	BodySize int64 `yaml:"body_size"`
+}
+
+// SecurityConfig holds optional HTTP security headers.
+type SecurityConfig struct {
+	Headers SecurityHeaders `yaml:"headers"`
+}
+
+// SecurityHeaders are emitted only when non-empty.
+type SecurityHeaders struct {
+	XFrameOptions           string `yaml:"x_frame_options"`
+	XContentTypeOptions     string `yaml:"x_content_type_options"`
+	StrictTransportSecurity string `yaml:"strict_transport_security"`
+	ReferrerPolicy          string `yaml:"referrer_policy"`
+	ContentSecurityPolicy   string `yaml:"content_security_policy"`
+	PermissionsPolicy       string `yaml:"permissions_policy"`
 }
 
 type CORSConfig struct {

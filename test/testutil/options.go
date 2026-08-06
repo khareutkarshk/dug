@@ -14,4 +14,8 @@ type GatewayOptions struct {
 
 	RateLimitRPS   float64
 	RateLimitBurst int
+
+	BodySize        int64
+	Compression     config.CompressionConfig
+	SecurityHeaders config.SecurityHeaders
 }

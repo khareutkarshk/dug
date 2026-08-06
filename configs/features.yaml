@@ -1,0 +1,65 @@
+server:
+  port: 8080
+  retries: 1
+
+  tls:
+    enabled: false
+    cert_file: certs/server.crt
+    key_file: certs/server.key
+
+  rate_limit:
+    rps: 200
+    burst: 200
+
+  # Reject request bodies larger than 1 MiB (0 = unlimited)
+  limits:
+    body_size: 1048576
+
+  # Gzip responses when the client accepts encoding and body >= min_size
+  compression:
+    enabled: true
+    min_size: 1024
+
+  # Only configured headers are emitted
+  security:
+    headers:
+      x_frame_options: DENY
+      x_content_type_options: nosniff
+      strict_transport_security: max-age=31536000; includeSubDomains
+      referrer_policy: no-referrer
+      content_security_policy: default-src 'self'
+      permissions_policy: camera=(), microphone=()
+
+  read_timeout: 10s
+  write_timeout: 10s
+  idle_timeout: 120s
+
+routes:
+  - path: /
+    timeout: 5s
+    strategy: smooth_weighted
+
+    request_headers:
+      add:
+        X-Gateway: DUG
+      remove:
+        - X-Internal
+
+    response_headers:
+      add:
+        X-Powered-By: DUG
+      remove:
+        - Server
+
+    cors:
+      enabled: true
+      allow_origins: ["*"]
+      allow_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+      allow_headers: ["Authorization", "Content-Type"]
+      expose_headers: ["X-Request-ID"]
+      allow_credentials: false
+      max_age: 3600
+
+    upstreams:
+      - url: http://localhost:3001
+        weight: 1

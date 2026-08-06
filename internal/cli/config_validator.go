@@ -81,6 +81,16 @@ func checkConfig(cfg *config.Config) *ValidationResult {
 		result.add("server.idle_timeout", "must be >= 0")
 	}
 
+	if cfg.Server.Limits.BodySize < 0 {
+		result.add("server.limits.body_size", "must be >= 0")
+	}
+
+	if cfg.Server.Compression.MinSize < 0 {
+		result.add("server.compression.min_size", "must be >= 0")
+	}
+
+	validateSecurityHeaders(result, cfg.Server.Security.Headers)
+
 	if cfg.Server.TLS.Enabled {
 		if strings.TrimSpace(cfg.Server.TLS.CertFile) == "" {
 			result.add("server.tls.cert_file", "required when tls.enabled is true")
@@ -136,10 +146,15 @@ func checkConfig(cfg *config.Config) *ValidationResult {
 			result.add(prefix+".timeout", "must be >= 0")
 		}
 
+		validateHeaderRules(result, prefix+".request_headers", route.RequestHeaders)
+		validateHeaderRules(result, prefix+".response_headers", route.ResponseHeaders)
+
 		if len(route.Upstreams) == 0 {
 			result.add(prefix+".upstreams", "at least one upstream is required")
 			continue
 		}
+
+		seenUpstreamURLs := make(map[string]int)
 
 		for j, u := range route.Upstreams {
 			upPrefix := fmt.Sprintf("%s.upstreams[%d]", prefix, j)
@@ -163,8 +178,15 @@ func checkConfig(cfg *config.Config) *ValidationResult {
 				result.add(upPrefix+".url", "host is required")
 			}
 
-			if u.Weight < 0 {
-				result.add(upPrefix+".weight", "must be >= 0")
+			normalized := strings.TrimRight(u.URL, "/")
+			if prev, ok := seenUpstreamURLs[normalized]; ok {
+				result.add(upPrefix+".url", fmt.Sprintf("duplicate of %s.upstreams[%d].url", prefix, prev))
+			} else {
+				seenUpstreamURLs[normalized] = j
+			}
+
+			if u.Weight <= 0 {
+				result.add(upPrefix+".weight", "must be > 0")
 			}
 		}
 
@@ -181,4 +203,93 @@ func checkConfig(cfg *config.Config) *ValidationResult {
 	}
 
 	return result
+}
+
+func validateHeaderRules(result *ValidationResult, prefix string, rules config.HeaderRules) {
+	seenAdd := make(map[string]string)
+	for name := range rules.Add {
+		key := strings.ToLower(strings.TrimSpace(name))
+		if key == "" {
+			result.add(prefix+".add", "header name must not be empty")
+			continue
+		}
+		if prev, ok := seenAdd[key]; ok {
+			result.add(prefix+".add", fmt.Sprintf("duplicate header %q (also as %q)", name, prev))
+			continue
+		}
+		seenAdd[key] = name
+	}
+
+	seenRemove := make(map[string]struct{})
+	for _, name := range rules.Remove {
+		key := strings.ToLower(strings.TrimSpace(name))
+		if key == "" {
+			result.add(prefix+".remove", "header name must not be empty")
+			continue
+		}
+		if _, ok := seenRemove[key]; ok {
+			result.add(prefix+".remove", fmt.Sprintf("duplicate header %q", name))
+			continue
+		}
+		seenRemove[key] = struct{}{}
+
+		if prev, ok := seenAdd[key]; ok {
+			result.add(prefix, fmt.Sprintf("header %q cannot be both added (%q) and removed", name, prev))
+		}
+	}
+}
+
+func validateSecurityHeaders(result *ValidationResult, headers config.SecurityHeaders) {
+	if v := strings.TrimSpace(headers.XFrameOptions); v != "" {
+		upper := strings.ToUpper(v)
+		if upper != "DENY" && upper != "SAMEORIGIN" && !strings.HasPrefix(upper, "ALLOW-FROM ") {
+			result.add(
+				"server.security.headers.x_frame_options",
+				`must be "DENY", "SAMEORIGIN", or "ALLOW-FROM <uri>"`,
+			)
+		}
+	}
+
+	if v := strings.TrimSpace(headers.XContentTypeOptions); v != "" {
+		if !strings.EqualFold(v, "nosniff") {
+			result.add(
+				"server.security.headers.x_content_type_options",
+				`must be "nosniff"`,
+			)
+		}
+	}
+
+	if v := strings.TrimSpace(headers.StrictTransportSecurity); v != "" {
+		if !strings.Contains(strings.ToLower(v), "max-age=") {
+			result.add(
+				"server.security.headers.strict_transport_security",
+				`must include "max-age="`,
+			)
+		}
+	}
+
+	if v := strings.TrimSpace(headers.ReferrerPolicy); v != "" {
+		if !validReferrerPolicy(v) {
+			result.add(
+				"server.security.headers.referrer_policy",
+				"invalid referrer policy value",
+			)
+		}
+	}
+}
+
+func validReferrerPolicy(value string) bool {
+	switch strings.ToLower(value) {
+	case "no-referrer",
+		"no-referrer-when-downgrade",
+		"origin",
+		"origin-when-cross-origin",
+		"same-origin",
+		"strict-origin",
+		"strict-origin-when-cross-origin",
+		"unsafe-url":
+		return true
+	default:
+		return false
+	}
 }

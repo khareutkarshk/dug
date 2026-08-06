@@ -68,6 +68,18 @@ func NewRouter(cfg *config.Config) (http.Handler, error) {
 			handler = middleware.RateLimit(manager)(handler)
 		}
 
+		if cfg.Server.Limits.BodySize > 0 {
+			handler = middleware.BodyLimit(cfg.Server.Limits.BodySize)(handler)
+		}
+
+		if middleware.HasSecurityHeaders(cfg.Server.Security.Headers) {
+			handler = middleware.SecurityHeaders(cfg.Server.Security.Headers)(handler)
+		}
+
+		if cfg.Server.Compression.Enabled {
+			handler = middleware.Compression(cfg.Server.Compression)(handler)
+		}
+
 		handler = middleware.CORS(route.CORS)(handler)
 
 		// register the proxy with the mux
