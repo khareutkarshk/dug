@@ -140,8 +140,17 @@ make build
 
 ### Option 3 — Docker
 
+Local compose:
+
 ```bash
 docker compose up --build
+```
+
+Or pull a published release image from GitHub Container Registry:
+
+```bash
+docker pull ghcr.io/khareutkarshk/dug:latest
+docker run --rm -p 8080:8080 ghcr.io/khareutkarshk/dug:v0.1.0
 ```
 
 ## Generate local TLS certificates
@@ -204,17 +213,28 @@ dug version -json
 
 ### Releases
 
-Tagged versions (`v*`) publish multi-platform binaries via GitHub Releases:
+Pushing a version tag (`v*`) runs `.github/workflows/release.yml`, which:
 
-- linux/amd64, linux/arm64
-- darwin/amd64, darwin/arm64
-- windows/amd64
+1. Cross-compiles binaries (linux/darwin/windows) with version ldflags
+2. Packages them (`.tar.gz` / `.zip`) and publishes a GitHub Release
+3. Builds and pushes a multi-arch image to GHCR (`linux/amd64`, `linux/arm64`)
 
 ```bash
-# Example after a release is published
+# Binary (archive contains ./dug)
 curl -LO https://github.com/khareutkarshk/dug/releases/latest/download/dug_v0.1.0_linux_amd64.tar.gz
 tar -xzf dug_v0.1.0_linux_amd64.tar.gz
-./dug_v0.1.0_linux_amd64 version
+./dug version
+
+# Container
+docker pull ghcr.io/khareutkarshk/dug:v0.1.0
+docker pull ghcr.io/khareutkarshk/dug:latest
+```
+
+To cut a release from `main`:
+
+```bash
+git tag v0.1.1
+git push origin v0.1.1
 ```
 
 ---
@@ -366,7 +386,7 @@ The core gateway functionality is complete and stable. The next milestone focuse
 - [x] GitHub Actions
 - [x] Go Race Tests
 - [x] golangci-lint
-- [ ] Automated Releases
+- [x] Automated Releases (binaries + GHCR)
 
 ---
 
