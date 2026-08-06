@@ -20,10 +20,11 @@ type VersionInfo struct {
 
 // CurrentVersion returns the process build metadata.
 func CurrentVersion() VersionInfo {
+	v, c, d := version.Info()
 	return VersionInfo{
-		Version: version.Version,
-		Commit:  version.Commit,
-		Date:    version.Date,
+		Version: v,
+		Commit:  c,
+		Date:    d,
 		Go:      version.GoVersion(),
 	}
 }
