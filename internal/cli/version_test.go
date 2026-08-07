@@ -12,7 +12,7 @@ import (
 func TestPrintVersionDefault(t *testing.T) {
 	version.Version = "1.2.3"
 	version.Commit = "abc1234"
-	version.Date = "2026-08-05T00:00:00Z"
+	version.BuildDate = "2026-08-05T00:00:00Z"
 	version.Go = "go1.25.1"
 
 	var buf bytes.Buffer
@@ -23,9 +23,10 @@ func TestPrintVersionDefault(t *testing.T) {
 	out := buf.String()
 	for _, want := range []string{
 		"dug 1.2.3",
-		"commit: abc1234",
-		"built:  2026-08-05T00:00:00Z",
-		"go:     go1.25.1",
+		"commit:     abc1234",
+		"build date: 2026-08-05T00:00:00Z",
+		"go:         go1.25.1",
+		"os/arch:",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("output %q missing %q", out, want)
@@ -49,7 +50,7 @@ func TestPrintVersionShort(t *testing.T) {
 func TestPrintVersionJSON(t *testing.T) {
 	version.Version = "1.2.3"
 	version.Commit = "abc1234"
-	version.Date = "2026-08-05T00:00:00Z"
+	version.BuildDate = "2026-08-05T00:00:00Z"
 	version.Go = "go1.25.1"
 
 	var buf bytes.Buffer
@@ -62,7 +63,10 @@ func TestPrintVersionJSON(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if info.Version != "1.2.3" || info.Commit != "abc1234" {
+	if info.Version != "1.2.3" || info.Commit != "abc1234" || info.BuildDate != "2026-08-05T00:00:00Z" {
 		t.Fatalf("unexpected json payload: %+v", info)
+	}
+	if info.OS == "" || info.Arch == "" {
+		t.Fatalf("expected os/arch in json payload: %+v", info)
 	}
 }

@@ -9,26 +9,26 @@ import (
 //
 //	-X github.com/khareutkarshk/dug/internal/version.Version=...
 //	-X github.com/khareutkarshk/dug/internal/version.Commit=...
-//	-X github.com/khareutkarshk/dug/internal/version.Date=...
+//	-X github.com/khareutkarshk/dug/internal/version.BuildDate=...
 //	-X github.com/khareutkarshk/dug/internal/version.Go=...
 //
 // When unset (typical for `go install`), Info() fills gaps from
 // runtime/debug.ReadBuildInfo() so module versions like v0.1.1 appear.
 var (
-	Version = "dev"
-	Commit  = "unknown"
-	Date    = "unknown"
-	Go      = ""
+	Version   = "dev"
+	Commit    = "unknown"
+	BuildDate = "unknown"
+	Go        = ""
 )
 
 // Info returns version metadata, preferring ldflags and falling back to
 // Go build info embedded by `go install` / `go build`.
-func Info() (version, commit, date string) {
-	version, commit, date = Version, Commit, Date
+func Info() (version, commit, buildDate string) {
+	version, commit, buildDate = Version, Commit, BuildDate
 
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
-		return version, commit, date
+		return version, commit, buildDate
 	}
 
 	if version == "" || version == "dev" {
@@ -53,13 +53,13 @@ func Info() (version, commit, date string) {
 		}
 	}
 
-	if date == "" || date == "unknown" {
+	if buildDate == "" || buildDate == "unknown" {
 		if vcsTime != "" {
-			date = vcsTime
+			buildDate = vcsTime
 		}
 	}
 
-	return version, commit, date
+	return version, commit, buildDate
 }
 
 // GoVersion returns the Go toolchain used to build the binary.
@@ -69,6 +69,11 @@ func GoVersion() string {
 		return runtime.Version()
 	}
 	return Go
+}
+
+// Platform returns the operating system and architecture the binary runs on.
+func Platform() (os, arch string) {
+	return runtime.GOOS, runtime.GOARCH
 }
 
 func shortCommit(rev string) string {

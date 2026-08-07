@@ -26,7 +26,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     -ldflags="-s -w \
       -X github.com/khareutkarshk/dug/internal/version.Version=${VERSION} \
       -X github.com/khareutkarshk/dug/internal/version.Commit=${COMMIT} \
-      -X github.com/khareutkarshk/dug/internal/version.Date=${DATE}" \
+      -X github.com/khareutkarshk/dug/internal/version.BuildDate=${DATE}" \
     -o dug \
     ./cmd/dug
 

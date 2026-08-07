@@ -13,29 +13,10 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
 jobs:
-  binaries:
-    name: Build (${{ matrix.goos }}/${{ matrix.goarch }})
+  test:
+    name: Test
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - goos: linux
-            goarch: amd64
-          - goos: linux
-            goarch: arm64
-          - goos: darwin
-            goarch: amd64
-          - goos: darwin
-            goarch: arm64
-          - goos: windows
-            goarch: amd64
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,76 +27,47 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Build and package
-        env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-          CGO_ENABLED: "0"
-        run: |
-          set -euo pipefail
+      - name: Run tests
+        run: go test ./...
 
-          VERSION="${GITHUB_REF_NAME}"
-          COMMIT="$(git rev-parse --short HEAD)"
-          DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          GO_VERSION="$(go env GOVERSION)"
-
-          BIN="dug"
-          if [ "${GOOS}" = "windows" ]; then
-            BIN="dug.exe"
-          fi
-
-          ARCHIVE_BASE="dug_${VERSION}_${GOOS}_${GOARCH}"
-          mkdir -p dist
-
-          go build \
-            -trimpath \
-            -ldflags "-s -w \
-              -X github.com/khareutkarshk/dug/internal/version.Version=${VERSION} \
-              -X github.com/khareutkarshk/dug/internal/version.Commit=${COMMIT} \
-              -X github.com/khareutkarshk/dug/internal/version.Date=${DATE} \
-              -X github.com/khareutkarshk/dug/internal/version.Go=${GO_VERSION}" \
-            -o "dist/${BIN}" \
-            ./cmd/dug
-
-          cd dist
-          if [ "${GOOS}" = "windows" ]; then
-            zip "${ARCHIVE_BASE}.zip" "${BIN}"
-          else
-            tar -czf "${ARCHIVE_BASE}.tar.gz" "${BIN}"
-          fi
-          rm -f "${BIN}"
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: dug-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: |
-            dist/*.tar.gz
-            dist/*.zip
-          if-no-files-found: error
-
-  docker:
-    name: Publish Docker image
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set build metadata
-        id: meta_build
-        run: |
-          set -euo pipefail
-          echo "version=${GITHUB_REF_NAME}" >> "${GITHUB_OUTPUT}"
-          echo "commit=$(git rev-parse --short HEAD)" >> "${GITHUB_OUTPUT}"
-          echo "date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> "${GITHUB_OUTPUT}"
-          echo "image=$(echo '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')" >> "${GITHUB_OUTPUT}"
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          go-version-file: go.mod
+          cache: true
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.12.2
+
+  release:
+    name: GoReleaser
+    needs:
+      - test
+      - lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Set build metadata
+        run: echo "GOVERSION=$(go env GOVERSION)" >> "$GITHUB_ENV"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -123,55 +75,26 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          images: ${{ steps.meta_build.outputs.image }}
-          tags: |
-            type=raw,value=latest
-            type=ref,event=tag
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push multi-arch image
-        uses: docker/build-push-action@v6
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
         with:
-          context: .
-          file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            VERSION=${{ steps.meta_build.outputs.version }}
-            COMMIT=${{ steps.meta_build.outputs.commit }}
-            DATE=${{ steps.meta_build.outputs.date }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-  github-release:
-    name: Create GitHub Release
-    needs: binaries
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
         with:
-          path: dist
-          merge-multiple: true
-          pattern: dug-*
-
-      - name: Generate checksums
-        working-directory: dist
-        run: |
-          set -euo pipefail
-          sha256sum * > SHA256SUMS.txt
-          cat SHA256SUMS.txt
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/*
-          generate_release_notes: true
-          fail_on_unmatched_files: true
+          version: "~> v2"
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_USER: ${{ github.repository_owner }}
+          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+          GOVERSION: ${{ env.GOVERSION }}

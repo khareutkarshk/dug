@@ -12,20 +12,25 @@ import (
 
 // VersionInfo is the structured build metadata exposed by `dug version`.
 type VersionInfo struct {
-	Version string `json:"version"`
-	Commit  string `json:"commit"`
-	Date    string `json:"date"`
-	Go      string `json:"go"`
+	Version   string `json:"version"`
+	Commit    string `json:"commit"`
+	BuildDate string `json:"build_date"`
+	Go        string `json:"go"`
+	OS        string `json:"os"`
+	Arch      string `json:"arch"`
 }
 
 // CurrentVersion returns the process build metadata.
 func CurrentVersion() VersionInfo {
 	v, c, d := version.Info()
+	osName, arch := version.Platform()
 	return VersionInfo{
-		Version: v,
-		Commit:  c,
-		Date:    d,
-		Go:      version.GoVersion(),
+		Version:   v,
+		Commit:    c,
+		BuildDate: d,
+		Go:        version.GoVersion(),
+		OS:        osName,
+		Arch:      arch,
 	}
 }
 
@@ -60,10 +65,11 @@ func printVersion(w io.Writer, args []string) error {
 
 	default:
 		_, err := fmt.Fprintf(w, `dug %s
-  commit: %s
-  built:  %s
-  go:     %s
-`, info.Version, info.Commit, info.Date, info.Go)
+  commit:     %s
+  build date: %s
+  go:         %s
+  os/arch:    %s/%s
+`, info.Version, info.Commit, info.BuildDate, info.Go, info.OS, info.Arch)
 		return err
 	}
 }

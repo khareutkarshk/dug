@@ -9,7 +9,7 @@ GO_VERSION := $(shell go version | awk '{print $$3}')
 LDFLAGS := \
 	-X github.com/khareutkarshk/dug/internal/version.Version=$(VERSION) \
 	-X github.com/khareutkarshk/dug/internal/version.Commit=$(COMMIT) \
-	-X github.com/khareutkarshk/dug/internal/version.Date=$(DATE) \
+	-X github.com/khareutkarshk/dug/internal/version.BuildDate=$(DATE) \
 	-X github.com/khareutkarshk/dug/internal/version.Go=$(GO_VERSION)
 
 .PHONY: help
@@ -23,6 +23,8 @@ help:
 	@echo "  make race       - Run race detector"
 	@echo "  make benchmark  - Run gateway load benchmarks (writes benchmarks/results.md)"
 	@echo "  make lint       - Run golangci-lint"
+	@echo "  make release-check - Validate GoReleaser config"
+	@echo "  make release-snapshot - Build a local snapshot release"
 	@echo "  make fmt        - Format source"
 	@echo "  make tidy       - Tidy dependencies"
 	@echo "  make clean      - Remove binaries"
@@ -79,6 +81,18 @@ tidy:
 lint:
 	golangci-lint run
 
+GITHUB_USER ?= your-github-user
+DOCKERHUB_USER ?= your-dockerhub-user
+
+.PHONY: release-check
+release-check:
+	GOVERSION=$(GO_VERSION) goreleaser check
+
+.PHONY: release-snapshot
+release-snapshot:
+	GOVERSION=$(GO_VERSION) GITHUB_USER=$(GITHUB_USER) DOCKERHUB_USER=$(DOCKERHUB_USER) goreleaser release --snapshot --clean
+
 .PHONY: clean
 clean:
 	rm -f $(BINARY)
+	rm -rf dist/

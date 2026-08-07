@@ -1,0 +1,90 @@
+# GoReleaser configuration for DUG releases.
+# See RELEASE.md for prerequisites, secrets, and local testing.
+#
+# Replace placeholder registry users via environment variables:
+#   GITHUB_USER      — GitHub username or org (also used for ghcr.io)
+#   DOCKERHUB_USER   — Docker Hub username
+
+version: 2
+
+project_name: dug
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: dug
+    main: ./cmd/dug
+    binary: dug
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X=github.com/khareutkarshk/dug/internal/version.Version={{.Version}}
+      - -X=github.com/khareutkarshk/dug/internal/version.Commit={{.ShortCommit}}
+      - -X=github.com/khareutkarshk/dug/internal/version.BuildDate={{.Date}}
+      - -X=github.com/khareutkarshk/dug/internal/version.Go={{.Env.GOVERSION}}
+
+archives:
+  - id: default
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: SHA256SUMS.txt
+  algorithm: sha256
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+release:
+  mode: replace
+
+dockers_v2:
+  - id: dug
+    ids:
+      - dug
+    dockerfile: Dockerfile.goreleaser
+    images:
+      - "ghcr.io/{{ .Env.GITHUB_USER }}/dug"
+      - "docker.io/{{ .Env.DOCKERHUB_USER }}/dug"
+    tags:
+      - "{{ .Version }}"
+      - latest
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    extra_files:
+      - configs/docker.yaml
+    sbom: false
+    flags:
+      - "--provenance=false"

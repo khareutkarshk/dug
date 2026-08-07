@@ -1,0 +1,16 @@
+# Dockerfile used by GoReleaser (dockers_v2) to package pre-built binaries.
+# Binaries are copied from $TARGETPLATFORM/dug in the build context.
+FROM alpine:latest
+
+RUN apk add --no-cache ca-certificates
+
+ARG TARGETPLATFORM
+
+COPY ${TARGETPLATFORM}/dug /app/dug
+COPY configs/docker.yaml /app/configs/docker.yaml
+
+WORKDIR /app
+
+EXPOSE 8080
+
+CMD ["./dug", "run", "-config", "configs/docker.yaml"]
